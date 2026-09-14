@@ -1,0 +1,43 @@
+#tf2iv-banner {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+  padding: 10px 14px;
+  border: 1px solid #6b3a16;
+  border-radius: 6px;
+  background: #1b1d21;
+  color: #f4e6c3;
+  font-family: "Motiva Sans", Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#tf2iv-banner strong {
+  color: #ff7a2f;
+}
+
+#tf2iv-banner .tf2iv-muted {
+  color: #b7aa8f;
+}
+
+#tf2iv-trade-panel {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid #6b3a16;
+  border-radius: 6px;
+  background: #1b1d21;
+  color: #f4e6c3;
+  font-family: "Motiva Sans", Arial, sans-serif;
+  font-size: 13px;
+}
+
+#tf2iv-trade-panel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #ff7a2f;
+}

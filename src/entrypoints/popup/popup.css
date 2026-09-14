@@ -1,0 +1,39 @@
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  width: 320px;
+  background: #1b1d21;
+  color: #f4e6c3;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.popup {
+  padding: 14px 16px 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #ff7a2f;
+}
+
+p,
+ol {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+ol {
+  padding-left: 18px;
+}
+
+.disclaimer {
+  margin: 0;
+  color: #b7aa8f;
+  font-size: 11px;
+}

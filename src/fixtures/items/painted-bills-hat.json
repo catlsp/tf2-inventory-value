@@ -1,0 +1,22 @@
+{
+  "classid": "3",
+  "instanceid": "0",
+  "name": "Bill's Hat",
+  "market_hash_name": "Bill's Hat",
+  "tradable": 1,
+  "type": "Level 10 Hat",
+  "app_data": {
+    "def_index": "125",
+    "quality": "6"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "Unique",
+      "localized_tag_name": "Unique"
+    }
+  ],
+  "descriptions": [
+    { "value": "Paint Color: Pink as Hell" }
+  ]
+}

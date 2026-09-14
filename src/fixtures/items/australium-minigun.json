@@ -1,0 +1,22 @@
+{
+  "classid": "6",
+  "instanceid": "0",
+  "name": "Australium Minigun",
+  "market_hash_name": "Strange Australium Minigun",
+  "tradable": 1,
+  "type": "Strange Minigun - Kills: 42",
+  "app_data": {
+    "def_index": "15",
+    "quality": "11"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "Strange",
+      "localized_tag_name": "Strange"
+    }
+  ],
+  "descriptions": [
+    { "value": "Kills: 42" }
+  ]
+}

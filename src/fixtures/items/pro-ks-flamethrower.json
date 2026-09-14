@@ -1,0 +1,24 @@
+{
+  "classid": "7",
+  "instanceid": "0",
+  "name": "Flame Thrower",
+  "market_hash_name": "Professional Killstreak Flame Thrower",
+  "tradable": 1,
+  "type": "Level 1 Flame Thrower",
+  "app_data": {
+    "def_index": "208",
+    "quality": "6"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "Unique",
+      "localized_tag_name": "Unique"
+    }
+  ],
+  "descriptions": [
+    { "value": "Killstreaks Active" },
+    { "value": "Sheen: Manndarin" },
+    { "value": "Killstreaker: Fire Horns" }
+  ]
+}

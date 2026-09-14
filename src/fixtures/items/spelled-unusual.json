@@ -1,0 +1,24 @@
+{
+  "classid": "4",
+  "instanceid": "0",
+  "name": "Team Captain",
+  "market_hash_name": "Unusual Team Captain",
+  "tradable": 1,
+  "type": "Level 10 Hat",
+  "app_data": {
+    "def_index": "378",
+    "quality": "5"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "rarity4",
+      "localized_tag_name": "Unusual"
+    }
+  ],
+  "descriptions": [
+    { "value": "★ Unusual Effect: Burning Flames" },
+    { "value": "Halloween: Voices from Below" },
+    { "value": "Halloween: Headless Horseshoes" }
+  ]
+}

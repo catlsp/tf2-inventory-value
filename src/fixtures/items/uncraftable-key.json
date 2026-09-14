@@ -1,0 +1,22 @@
+{
+  "classid": "8",
+  "instanceid": "0",
+  "name": "Mann Co. Supply Crate Key",
+  "market_hash_name": "Mann Co. Supply Crate Key",
+  "tradable": 1,
+  "type": "Level 5 Tool",
+  "app_data": {
+    "def_index": "5021",
+    "quality": "6"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "Unique",
+      "localized_tag_name": "Unique"
+    }
+  ],
+  "descriptions": [
+    { "value": "( Not Usable in Crafting )" }
+  ]
+}
