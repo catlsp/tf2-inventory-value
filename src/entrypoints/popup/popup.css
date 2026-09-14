@@ -33,7 +33,16 @@ ol {
 }
 
 .disclaimer {
-  margin: 0;
+  margin: 12px 0 0;
   color: #b7aa8f;
   font-size: 11px;
+}
+
+button {
+  padding: 8px 12px;
+  border: 1px solid #6b3a16;
+  border-radius: 6px;
+  background: #c4541a;
+  color: #fff8ee;
+  cursor: pointer;
 }

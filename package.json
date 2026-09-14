@@ -2,7 +2,7 @@
   "name": "tf2-inventory-value",
   "description": "Show TF2 item values in keys/ref on Steam inventory and trade offers",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",

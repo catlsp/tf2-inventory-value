@@ -25,6 +25,50 @@
   color: #b7aa8f;
 }
 
+#tf2iv-banner .tf2iv-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#tf2iv-banner button {
+  padding: 6px 10px;
+  border: 1px solid #6b3a16;
+  border-radius: 6px;
+  background: #c4541a;
+  color: #fff8ee;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.item .tf2iv-price,
+.itemHolder .tf2iv-price {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  padding: 1px 2px;
+  background: rgba(12, 12, 14, 0.86);
+  color: #f4e6c3;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
+}
+
+.tf2iv-price.is-unusual {
+  color: #d6a3ff;
+}
+
+.tf2iv-price.is-extra {
+  color: #ffb347;
+}
+
+.tf2iv-price.is-unknown {
+  color: #8d8678;
+}
+
 #tf2iv-trade-panel {
   margin: 12px 0;
   padding: 12px 14px;
