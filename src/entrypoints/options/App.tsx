@@ -1,21 +1,39 @@
+import { GITHUB_ISSUES, SUPPORT_EMAIL, bugReportMailto } from '@/lib/support';
+import { applyPageLocale, t } from '@/lib/i18n';
+import { useLayoutEffect } from 'react';
+import { SiteChrome } from '../thanks/SiteChrome';
+import { MailboxIcon } from '@/lib/ui/icons/mailbox';
+import { GithubIcon } from '@/lib/ui/icons/github';
+
+const version = browser.runtime.getManifest().version;
+
 export default function OptionsApp() {
+  useLayoutEffect(() => {
+    applyPageLocale('options_document_title');
+  }, []);
+  const mail = bugReportMailto(version);
+
   return (
-    <main className="popup options">
-      <h1>TF2 Inventory Value</h1>
+    <SiteChrome title="TF2 Inventory Value">
       <p>
-        Цены подгружаются автоматически с{' '}
+        {t('options_pricedb_before')}
         <a href="https://pricedb.io" target="_blank" rel="noreferrer">
           pricedb.io
         </a>
-        . Ключ backpack.tf вводить не нужно.
+        {t('options_pricedb_after')}
       </p>
-      <p>
-        Откройте инвентарь TF2 или окно обмена на Steam — оценка появится на странице.
-      </p>
-      <p className="disclaimer">
-        Не связано с Valve / Steam / backpack.tf. Данные инвентаря никуда, кроме вашего браузера и
-        публичного прайслиста, не отправляются.
-      </p>
-    </main>
+      <p>{t('options_open')}</p>
+      <div className="actions">
+        <a className="btn" href={mail}>
+          <MailboxIcon size={18} />
+          {SUPPORT_EMAIL}
+        </a>
+        <a className="btn alt" href={GITHUB_ISSUES} target="_blank" rel="noreferrer">
+          <GithubIcon size={18} />
+          GitHub Issues
+        </a>
+      </div>
+      <p className="fine">{t('options_disclaimer')}</p>
+    </SiteChrome>
   );
 }

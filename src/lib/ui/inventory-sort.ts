@@ -13,16 +13,6 @@ export const INVENTORY_SORT_MODES = [
 
 export type InventorySortMode = (typeof INVENTORY_SORT_MODES)[number];
 
-export const INVENTORY_SORT_LABELS: Record<InventorySortMode, string> = {
-  steam: 'как в Steam',
-  'price-desc': 'по цене',
-  unusual: 'unusual',
-  spells: 'спеллы',
-  paint: 'краска',
-  parts: 'strange parts',
-  killstreak: 'killstreak',
-};
-
 export type SortableItem = {
   assetid: string;
   item: ItemPassport;
@@ -107,13 +97,18 @@ export function isInventorySortMode(value: string): value is InventorySortMode {
   return (INVENTORY_SORT_MODES as readonly string[]).includes(value);
 }
 
+export function assetIdFromElementId(id: string): string | null {
+  return id.match(/440_2_(\d+)$/)?.[1] ?? null;
+}
+
 export function assetIdFromInventoryNode(node: Element): string | null {
   const item = node.classList.contains('item')
     ? node
     : node.querySelector('.item');
-  const id = item?.id ?? '';
-  const match = id.match(/(?:^|_)440_2_(\d+)$/);
-  return match?.[1] ?? null;
+  const marked = (item instanceof HTMLElement && item.dataset.tf2ivAssetid)
+    || (node instanceof HTMLElement && node.dataset.tf2ivAssetid);
+  if (marked) return marked;
+  return assetIdFromElementId(item?.id ?? node.id ?? '');
 }
 
 export function findTf2InventoryRoot(): HTMLElement | null {
@@ -124,12 +119,12 @@ export function findTf2InventoryRoot(): HTMLElement | null {
 }
 
 export function applyInventorySort(sortedAssetIds: string[]): boolean {
-  const root = findTf2InventoryRoot();
+  const root = findTf2InventoryRoot() ?? document.getElementById('inventories');
   if (!root) return false;
   const pages = [...root.querySelectorAll<HTMLElement>('.inventory_page')];
-  if (pages.length === 0) return false;
+  const containers = pages.length > 0 ? pages : [root];
 
-  const holders = pages.flatMap((page) => {
+  const holders = containers.flatMap((page) => {
     const direct = [...page.querySelectorAll<HTMLElement>(':scope > .itemHolder')];
     return direct.length > 0 ? direct : [...page.querySelectorAll<HTMLElement>('.itemHolder')];
   });
@@ -137,7 +132,7 @@ export function applyInventorySort(sortedAssetIds: string[]): boolean {
 
   const pageSize = Math.max(
     1,
-    pages[0].querySelectorAll(':scope > .itemHolder').length || 25,
+    (pages[0]?.querySelectorAll(':scope > .itemHolder').length ?? holders.length) || 25,
   );
 
   const byAsset = new Map<string, HTMLElement>();
@@ -165,8 +160,8 @@ export function applyInventorySort(sortedAssetIds: string[]): boolean {
   ordered.push(...empty.filter((holder) => !used.has(holder)));
 
   for (let index = 0; index < ordered.length; index += 1) {
-    const page = pages[Math.min(pages.length - 1, Math.floor(index / pageSize))];
+    const page = containers[Math.min(containers.length - 1, Math.floor(index / pageSize))];
     page.appendChild(ordered[index]);
   }
-  return true;
+  return ordered.length > 0;
 }

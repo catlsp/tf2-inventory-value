@@ -1,3 +1,6 @@
+import { changelogSince } from '@/lib/changelog';
+import { t } from '@/lib/i18n';
+import { thanksPagePath, whatsNewPagePath } from '@/lib/support';
 import { getPriceCache, PRICE_CACHE_VERSION, savePriceCache } from '@/lib/settings';
 import {
   KEY_SKU,
@@ -62,7 +65,7 @@ async function fetchKeyRate(): Promise<number> {
   if (!response.ok) throw new Error(`pricedb.io key HTTP ${response.status}`);
   const index = upsertPrices(await response.json());
   const keyRef = keyRefFromSkuIndex(index);
-  if (!keyRef) throw new Error('Не удалось получить курс ключа');
+  if (!keyRef) throw new Error(t('err_key_rate'));
   return keyRef;
 }
 
@@ -165,6 +168,25 @@ async function handleGetPrices(skus: string[], searchQueries: string[]): Promise
 }
 
 export default defineBackground(() => {
+  browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+      void browser.tabs.create({ url: browser.runtime.getURL(thanksPagePath()) });
+      return;
+    }
+    if (details.reason !== 'update') return;
+    const current = browser.runtime.getManifest().version;
+    const previous = details.previousVersion ?? '';
+    if (!previous || previous === current) return;
+    if (changelogSince(previous).length === 0) return;
+    const url = new URL(browser.runtime.getURL(whatsNewPagePath()));
+    url.searchParams.set('from', previous);
+    void browser.tabs.create({ url: url.toString() });
+  });
+
+  browser.runtime.onUpdateAvailable.addListener(() => {
+    browser.runtime.reload();
+  });
+
   browser.runtime.onMessage.addListener((message: Tf2ivRequest) => {
     return (async () => {
       if (message.type === 'GET_PRICE_STATUS') {

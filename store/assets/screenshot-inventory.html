@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>screenshot inventory 1280x800</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1280px;
+        height: 800px;
+        overflow: hidden;
+        background: #1b2838;
+        color: #c7d5e0;
+        font-family: "Motiva Sans", "Segoe UI", Arial, sans-serif;
+      }
+      .page {
+        box-sizing: border-box;
+        width: 1280px;
+        height: 800px;
+        padding: 28px 48px 32px;
+        background: linear-gradient(#1b2838, #15202d);
+      }
+      .crumb {
+        margin: 0 0 10px;
+        color: #8f98a0;
+        font-size: 13px;
+      }
+      h1 {
+        margin: 0 0 16px;
+        color: #fff;
+        font-size: 26px;
+        font-weight: 400;
+      }
+      #tf2iv-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 0 16px;
+        padding: 10px 14px;
+        border: 1px solid #6b3a16;
+        border-radius: 6px;
+        background: #1b1d21;
+        color: #f4e6c3;
+        font-size: 13px;
+      }
+      #tf2iv-banner strong {
+        color: #ff7a2f;
+      }
+      .tf2iv-muted {
+        color: #b7aa8f;
+      }
+      .tf2iv-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      select,
+      button {
+        padding: 6px 10px;
+        border: 1px solid #6b3a16;
+        border-radius: 6px;
+        background: #2a2d33;
+        color: #f4e6c3;
+        font-size: 12px;
+      }
+      button {
+        background: #c4541a;
+        color: #fff8ee;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(10, 96px);
+        gap: 6px;
+      }
+      .item {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        border: 1px solid #3a4553;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%),
+          var(--slot, #2a475e);
+      }
+      .tf2iv-price {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 2px 2px;
+        background: rgba(12, 12, 14, 0.86);
+        color: #f4e6c3;
+        font-size: 10px;
+        text-align: center;
+      }
+      .is-unusual {
+        color: #d6a3ff;
+      }
+      .is-extra {
+        color: #ffb347;
+      }
+      .is-unknown {
+        color: #8d8678;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <p class="crumb">Steam Community ▸ Inventory ▸ Team Fortress 2</p>
+      <h1>Team Fortress 2 inventory</h1>
+      <div id="tf2iv-banner">
+        <div>
+          <div><strong>124.80 keys</strong> · 48 items with quotes</div>
+          <div class="tf2iv-muted">pricedb.io buy quotes · unusuals by effect</div>
+        </div>
+        <div class="tf2iv-actions">
+          <label class="tf2iv-muted">Sort
+            <select><option>Value (high → low)</option></select>
+          </label>
+          <button type="button">Refresh</button>
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <script>
+      const slots = [
+        { color: '#c4a35a', price: '2.55 keys', cls: '' },
+        { color: '#7a4ac8', price: '41.20 keys', cls: 'is-unusual' },
+        { color: '#3d7ea6', price: '1.33 keys', cls: '' },
+        { color: '#b85c2a', price: '0.05 ref', cls: 'is-extra' },
+        { color: '#5a6b4a', price: '0.11 ref', cls: '' },
+        { color: '#8a3030', price: '6.40 keys', cls: '' },
+        { color: '#2f5f8a', price: '0.22 ref', cls: '' },
+        { color: '#6b3a16', price: '1.00 key', cls: '' },
+        { color: '#4a4a4a', price: '—', cls: 'is-unknown' },
+        { color: '#3a6b4a', price: '0.33 ref', cls: '' },
+      ];
+      const grid = document.getElementById('grid');
+      for (let i = 0; i < 50; i += 1) {
+        const spec = slots[i % slots.length];
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.style.setProperty('--slot', spec.color);
+        el.innerHTML = `<div class="tf2iv-price ${spec.cls}">${spec.price}</div>`;
+        grid.appendChild(el);
+      }
+    </script>
+  </body>
+</html>

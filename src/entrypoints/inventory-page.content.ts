@@ -1,36 +1,101 @@
+const ORIGINAL_KEY = '__tf2ivOriginalHolders';
+const MSG_SOURCE = 'tf2iv';
+
 type SteamInventoryHandle = {
-  m_cPageSize?: number;
-  pageSize?: number;
-  m_cItems?: number;
-  rgInventory?: Record<string, unknown>;
-  EnsurePage?: (page: number) => void;
-  LoadPage?: (page: number) => void;
+  appid?: number;
+  m_appid?: number;
+  m_rgItemElements?: unknown[];
+  m_bNeedsRepagination?: boolean;
+  LayoutPages?: () => void;
+  SetActivePage?: (page: number) => void;
+  [ORIGINAL_KEY]?: unknown[];
+};
+
+type SortMessage = {
+  source: string;
+  action: 'sort' | 'sort-done';
+  assetIds?: string[];
+  restore?: boolean;
+  ok?: boolean;
 };
 
 function activeInventory(): SteamInventoryHandle | null {
   const page = window as unknown as { g_ActiveInventory?: SteamInventoryHandle };
-  return page.g_ActiveInventory ?? null;
+  const inv = page.g_ActiveInventory;
+  if (!inv) return null;
+  const appid = inv.appid ?? inv.m_appid;
+  if (appid != null && Number(appid) !== 440) return null;
+  return inv;
 }
 
-function itemCount(inv: SteamInventoryHandle): number {
-  if (typeof inv.m_cItems === 'number' && inv.m_cItems > 0) return inv.m_cItems;
-  if (inv.rgInventory) return Object.keys(inv.rgInventory).length;
-  return 0;
+function asElement(holder: unknown): HTMLElement | null {
+  if (!holder || typeof holder !== 'object') return null;
+  if (holder instanceof HTMLElement) return holder;
+  const record = holder as { jquery?: unknown; 0?: unknown; get?: (index: number) => unknown };
+  const node = record[0] ?? record.get?.(0);
+  return node instanceof HTMLElement ? node : null;
 }
 
-async function ensurePages(): Promise<boolean> {
-  const inv = activeInventory();
-  if (!inv) return false;
-  const pageSize = inv.m_cPageSize || inv.pageSize || 25;
-  const total = itemCount(inv);
-  const pages = Math.max(1, Math.ceil(total / pageSize));
-  const load = inv.EnsurePage ?? inv.LoadPage;
-  if (!load) return false;
-  for (let page = 0; page < pages; page += 1) {
-    load.call(inv, page);
-    if (page % 5 === 4) await new Promise((resolve) => window.setTimeout(resolve, 0));
+function assetIdOfHolder(holder: unknown): string | null {
+  const el = asElement(holder);
+  if (!el) return null;
+  const marked = el.dataset.tf2ivAssetid || el.querySelector<HTMLElement>('.item')?.dataset.tf2ivAssetid;
+  if (marked) return marked;
+  const item = el.querySelector('.item');
+  const id = item?.id ?? el.id ?? '';
+  const match = id.match(/440_2_(\d+)$/);
+  return match?.[1] ?? null;
+}
+
+function applySteamSort(assetIds: string[] | undefined, restore: boolean): boolean {
+  try {
+    const inv = activeInventory();
+    if (!inv || !Array.isArray(inv.m_rgItemElements)) return false;
+
+    if (!inv[ORIGINAL_KEY]) inv[ORIGINAL_KEY] = inv.m_rgItemElements.slice();
+    const original = inv[ORIGINAL_KEY] ?? [];
+
+    if (restore) {
+      inv.m_rgItemElements = original.slice();
+    } else if (assetIds && assetIds.length > 0) {
+      const byId = new Map<string, unknown>();
+      for (const holder of inv.m_rgItemElements) {
+        const id = assetIdOfHolder(holder);
+        if (id && !byId.has(id)) byId.set(id, holder);
+      }
+      const used = new Set<unknown>();
+      const next: unknown[] = [];
+      for (const id of assetIds) {
+        const holder = byId.get(id);
+        if (holder == null || used.has(holder)) continue;
+        next.push(holder);
+        used.add(holder);
+      }
+      for (const holder of original) {
+        if (holder == null || used.has(holder)) continue;
+        next.push(holder);
+        used.add(holder);
+      }
+      inv.m_rgItemElements = next;
+    } else {
+      return false;
+    }
+
+    inv.m_bNeedsRepagination = true;
+    inv.LayoutPages?.();
+    inv.SetActivePage?.(0);
+    return true;
+  } catch {
+    return false;
   }
-  return true;
+}
+
+function onMessage(event: MessageEvent<SortMessage>): void {
+  if (event.source !== window) return;
+  const data = event.data;
+  if (!data || data.source !== MSG_SOURCE || data.action !== 'sort') return;
+  const ok = applySteamSort(data.assetIds, Boolean(data.restore));
+  window.postMessage({ source: MSG_SOURCE, action: 'sort-done', ok } satisfies SortMessage, '*');
 }
 
 export default defineContentScript({
@@ -41,15 +106,6 @@ export default defineContentScript({
   world: 'MAIN',
   runAt: 'document_idle',
   main() {
-    document.documentElement.dataset.tf2ivMain = '1';
-    document.addEventListener('tf2iv-load-inventory-pages', () => {
-      void ensurePages()
-        .then((ok) => {
-          document.dispatchEvent(new CustomEvent('tf2iv-inventory-pages-ready', { detail: { ok } }));
-        })
-        .catch(() => {
-          document.dispatchEvent(new CustomEvent('tf2iv-inventory-pages-ready', { detail: { ok: false } }));
-        });
-    });
+    window.addEventListener('message', onMessage);
   },
 });

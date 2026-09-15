@@ -6,7 +6,7 @@ import paintedHat from '../../fixtures/items/painted-bills-hat.json';
 import spelledUnusual from '../../fixtures/items/spelled-unusual.json';
 import strangeParts from '../../fixtures/items/strange-scattergun-parts.json';
 import proKs from '../../fixtures/items/pro-ks-flamethrower.json';
-import { sortAssetIds, type SortableItem } from './inventory-sort';
+import { sortAssetIds, assetIdFromElementId, type SortableItem } from './inventory-sort';
 import type { SteamItemDescription } from '../tf2/types';
 import type { Quote } from '../prices/types';
 
@@ -60,5 +60,10 @@ describe('inventory sort', () => {
 
   it('puts killstreaks first', () => {
     expect(sortAssetIds([unique, ks, painted], 'killstreak')[0]).toBe('6');
+  });
+
+  it('reads Steam item ids with and without the item prefix', () => {
+    expect(assetIdFromElementId('440_2_123456')).toBe('123456');
+    expect(assetIdFromElementId('item440_2_123456')).toBe('123456');
   });
 });

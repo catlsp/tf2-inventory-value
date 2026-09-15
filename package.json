@@ -2,7 +2,7 @@
   "name": "tf2-inventory-value",
   "description": "Show TF2 item values in keys/ref on Steam inventory and trade offers",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -14,21 +14,19 @@
     "compile": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "agent": "tsx scripts/agents/cli.ts",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "motion": "^13.3.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
-    "@cursor/sdk": "^1.0.31",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@wxt-dev/auto-icons": "^1.0.0",
     "@wxt-dev/module-react": "^1.1.5",
     "jsdom": "^26.1.0",
-    "tsx": "^4.23.13",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "wxt": "^0.20.7"

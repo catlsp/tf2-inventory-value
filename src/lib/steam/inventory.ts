@@ -1,6 +1,7 @@
 import { TF2_APPID, TF2_CONTEXT_ID, type SteamInventoryResponse } from '../tf2/types';
 import { mergeInventoryItems } from '../tf2/parse-steam-item';
 import { fetchWithRetry } from '../net/http';
+import { t } from '../i18n';
 import type { ItemPassport } from '../tf2/types';
 
 export function steamIdFromInventoryUrl(pathname: string, html: string): string | null {
@@ -54,14 +55,14 @@ async function fetchSteamInventoryPage(steamId: string, lastAssetId?: string): P
 
   const response = await fetchWithRetry(url.toString(), { credentials: 'include' });
   if (response.status === 429) {
-    throw new Error('Steam временно ограничил запросы (429). Подождите пару секунд и откройте инвентарь снова.');
+    throw new Error(t('err_steam_429'));
   }
   if (!response.ok) {
-    throw new Error(`Steam inventory HTTP ${response.status}`);
+    throw new Error(t('err_steam_http', { status: response.status }));
   }
   const payload = (await response.json()) as SteamInventoryResponse;
   if (payload.success === 0) {
-    throw new Error('Инвентарь скрыт или недоступен');
+    throw new Error(t('err_inventory_hidden'));
   }
   return payload;
 }

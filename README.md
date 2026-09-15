@@ -1,32 +1,56 @@
 # TF2 Inventory Value
 
-Неофициальное расширение Chrome: на инвентаре Team Fortress 2 и в окне обмена Steam видны цены в **keys/ref**.
+Unofficial browser extension: Team Fortress 2 inventories and Steam trade offers show item values in **keys/ref**.
 
-Не связано с Valve, Steam или backpack.tf. Пароль Steam не нужен, API-ключ тоже.
+Not affiliated with Valve, Steam, or backpack.tf. No Steam password. No API key.
 
-## Что делает
+## What it does
 
-- Считает рюкзак TF2 и пишет цену на предметы.
-- Unusual оценивается по эффекту, а не как обычная шляпа.
-- Краска, Halloween spells и strange parts помечаются, но к цене «банкой» не прибавляются — если нет отдельной котировки, будет пометка, а не выдуманная цифра.
-- В трейд-оффере показывает, сколько вы отдаёте, сколько получаете, и разницу. Если часть предметов без цены, «профит» зелёным не красится.
+- Prices TF2 items on the backpack and writes keys/ref on each item.
+- Unusuals are quoted by effect, not as a plain hat.
+- Paint, Halloween spells, and strange parts are flagged. They are not added as a made-up “can” markup unless there is a separate quote.
+- Trade offers show what you give, what you get, and the difference. If some items have no quote, profit is not painted green.
 
-Цены берутся с публичного [pricedb.io](https://pricedb.io) (агрегатор рынка TF2).
+Prices come from the public [pricedb.io](https://pricedb.io) TF2 market list.
 
-## Установка
+## Chrome Web Store
 
-Пока расширение не в Chrome Web Store:
+Listing copy, privacy answers, and image sizes: [store/CHROME_WEB_STORE.md](./store/CHROME_WEB_STORE.md).
 
-1. Скачайте репозиторий.
-2. Установите [Node.js](https://nodejs.org/) 22+.
-3. В папке проекта: `npm install` и `npm run build`.
-4. Chrome → `chrome://extensions` → режим разработчика → **Load unpacked** → папка `.output/chrome-mv3`.
-5. Откройте инвентарь TF2 на steamcommunity.com.
+```bash
+npm install
+npm run zip
+```
 
-## Конфиденциальность
+Upload `.output/tf2-inventory-value-*-chrome.zip`. Dashboard: [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole). One-time US$5 developer fee.
 
-[PRIVACY.md](./PRIVACY.md). Инвентарь обрабатывается в браузере; прайслист качается с pricedb.io.
+## Firefox Add-ons (AMO)
 
-## Лицензия
+Listing copy and submit steps: [store/FIREFOX_AMO.md](./store/FIREFOX_AMO.md). No registration fee. Firefox 128+.
+
+```bash
+npm install
+npm run zip:firefox
+```
+
+Upload `.output/tf2-inventory-value-*-firefox.zip` at [addons.mozilla.org/developers](https://addons.mozilla.org/developers/). Gecko id: `tf2-inventory-value@catlsp` — do not change it after the first AMO version.
+
+Privacy policy:
+
+`https://github.com/catlsp/tf2-inventory-value/blob/main/PRIVACY.md`
+
+## Load unpacked (development)
+
+1. Install [Node.js](https://nodejs.org/) 22+.
+2. In this folder: `npm install` then `npm run build` (Chrome) or `npm run build:firefox`.
+3. Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → `.output/chrome-mv3`.
+4. Firefox → `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick `.output/firefox-mv3/manifest.json`.
+5. Open a TF2 inventory on steamcommunity.com.
+
+## Privacy
+
+[PRIVACY.md](./PRIVACY.md). Inventory stays in the browser; the pricelist is downloaded from pricedb.io.
+
+## License
 
 MIT.

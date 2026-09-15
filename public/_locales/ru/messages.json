@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "TF2 Inventory Value"
+  },
+  "extDescription": {
+    "message": "Неофициальный оверлей TF2: цена предметов в keys/ref в инвентаре Steam и в окне обмена, включая unusual, краску и спеллы."
+  }
+}

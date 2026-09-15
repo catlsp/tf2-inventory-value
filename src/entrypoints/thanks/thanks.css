@@ -1,0 +1,261 @@
+:root {
+  --cosmic: #23212b;
+  --vanilla: #f2ffc9;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body {
+  background-color: var(--cosmic);
+  background-image:
+    linear-gradient(rgba(242, 255, 201, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242, 255, 201, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.site {
+  min-height: 100vh;
+  color: var(--vanilla);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+}
+
+.site-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vanilla);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.site-name > div {
+  display: flex;
+  color: var(--vanilla);
+}
+
+.site-ver {
+  color: color-mix(in srgb, var(--vanilla) 55%, var(--cosmic));
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-main {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 8px 20px 48px;
+}
+
+.card {
+  padding: 28px 26px 24px;
+  border: 1px solid color-mix(in srgb, var(--vanilla) 18%, transparent);
+  border-radius: 16px;
+  background: var(--vanilla);
+  color: var(--cosmic);
+}
+
+.card h1 {
+  margin: 0 0 12px;
+  color: var(--cosmic);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.card p {
+  margin: 0 0 16px;
+  color: color-mix(in srgb, var(--cosmic) 82%, #000);
+}
+
+.card a {
+  color: var(--cosmic);
+}
+
+.card a.btn {
+  color: var(--vanilla);
+}
+
+.card a.btn.alt,
+.card a.btn.alt > div {
+  color: var(--cosmic);
+}
+
+.card button.btn {
+  color: var(--vanilla);
+}
+
+.card a.btn > div {
+  color: inherit;
+}
+
+.steps {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--cosmic) 12%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vanilla) 70%, #fff);
+}
+
+.icon-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--cosmic);
+  color: var(--vanilla);
+}
+
+.icon-slot > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  color: inherit;
+}
+
+.icon-slot svg,
+.btn svg,
+.mail svg,
+.site-name svg {
+  display: block;
+  overflow: visible;
+  stroke: currentColor;
+  fill: none;
+}
+
+.note {
+  margin: 0 0 18px;
+  color: color-mix(in srgb, var(--cosmic) 70%, #000);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--cosmic);
+  border-radius: 10px;
+  background: var(--cosmic);
+  color: var(--vanilla);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn > div {
+  display: flex;
+  color: var(--vanilla);
+}
+
+.btn.alt {
+  background: transparent;
+  color: var(--cosmic);
+}
+
+.btn.alt > div {
+  color: var(--cosmic);
+}
+
+.btn:hover {
+  opacity: 0.92;
+}
+
+.mail {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.mail > div {
+  display: flex;
+  color: var(--cosmic);
+}
+
+.fine {
+  margin: 0;
+  color: color-mix(in srgb, var(--cosmic) 55%, #000);
+  font-size: 12px;
+}
+
+.since {
+  margin: 0 0 14px;
+  color: color-mix(in srgb, var(--cosmic) 65%, #000);
+  font-size: 13px;
+}
+
+.changes {
+  margin: 0 0 16px;
+}
+
+.changes h2 {
+  margin: 0 0 8px;
+  color: var(--cosmic);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.change-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.change-list li {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--cosmic) 12%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vanilla) 70%, #fff);
+  color: var(--cosmic);
+  font-size: 13px;
+}
+
+.kind {
+  margin-right: 6px;
+  font-weight: 700;
+}
+
+.kind::after {
+  content: ":";
+}

@@ -5,6 +5,7 @@ import { formatDelta, formatKeysRef } from '@/lib/prices/format';
 import { sumQuotes } from '@/lib/prices/lookup';
 import { fillAndQuote } from '@/lib/prices/quote-client';
 import { renderInventoryPrices } from '@/lib/ui/inventory-overlay';
+import { t } from '@/lib/i18n';
 import type { SkuPriceIndex } from '@/lib/prices/parse-pricedb';
 import type { ItemPassport } from '@/lib/tf2/types';
 import type { Quote } from '@/lib/prices/types';
@@ -22,10 +23,10 @@ function ensurePanel(): HTMLElement {
   panel.id = 'tf2iv-trade-panel';
   panel.innerHTML = `
     <h3>TF2 Inventory Value</h3>
-    <div data-tf2iv-trade-status class="tf2iv-muted">Считаю обмен…</div>
+    <div data-tf2iv-trade-status class="tf2iv-muted">${t('trade_counting')}</div>
     <div class="tf2iv-trade-rows" hidden>
-      <div>Отдаёте: <strong data-tf2iv-yours></strong></div>
-      <div>Получаете: <strong data-tf2iv-theirs></strong></div>
+      <div>${t('trade_yours')} <strong data-tf2iv-yours></strong></div>
+      <div>${t('trade_theirs')} <strong data-tf2iv-theirs></strong></div>
       <div data-tf2iv-delta></div>
     </div>
   `;
@@ -57,7 +58,7 @@ async function refreshTrade(): Promise<void> {
 
   if (yours.length === 0 && theirs.length === 0) {
     lastTradeKey = '';
-    setStatus('Положите предметы TF2 в окно обмена — покажем keys/ref и разницу.');
+    setStatus(t('trade_empty'));
     rows?.setAttribute('hidden', '');
     return;
   }
@@ -69,11 +70,11 @@ async function refreshTrade(): Promise<void> {
   }
 
   if (!ids.me && yours.length > 0) {
-    setStatus('Не удалось определить ваш SteamID. Обновите страницу обмена.');
+    setStatus(t('trade_no_steamid'));
     return;
   }
 
-  setStatus('Считаю обмен…');
+  setStatus(t('trade_counting'));
   try {
     const [yourInv, theirInv] = await Promise.all([
       ids.me ? fetchTf2Inventory(ids.me) : Promise.resolve([] as ItemPassport[]),
@@ -84,7 +85,7 @@ async function refreshTrade(): Promise<void> {
     const theirItems = pick(theirInv, theirs);
     const all = [...yourItems, ...theirItems];
     if (all.length === 0) {
-      setStatus('Предметы в обмене не из TF2 или инвентарь ещё грузится.');
+      setStatus(t('trade_not_tf2'));
       return;
     }
 
@@ -108,15 +109,15 @@ async function refreshTrade(): Promise<void> {
     const incomplete = yourSum.unpriced + theirSum.unpriced;
     if (incomplete > 0 || yourSum.priced + theirSum.priced === 0) {
       deltaEl.className = 'is-incomplete';
-      deltaEl.textContent = `Профит не считаем: ${incomplete} предмет(ов) без цены.`;
-      setStatus('Часть предметов без котировки — не зелёный «профит».');
+      deltaEl.textContent = t('trade_incomplete', { count: incomplete });
+      setStatus(t('trade_incomplete_status'));
       return;
     }
 
     const delta = theirSum.keys - yourSum.keys;
     deltaEl.className = delta >= 0 ? 'is-plus' : 'is-minus';
     deltaEl.textContent = `Δ ${formatDelta(delta, keyRef)}`;
-    setStatus('Оценка по buy (продажа ботам backpack.tf). Краска и спеллы не накручены.');
+    setStatus(t('trade_buy_note'));
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error));
   }

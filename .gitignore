@@ -1,6 +1,8 @@
 node_modules
 .output
 .wxt
+.cursor
+.git-rewrite
 *.local
 .DS_Store
 Thumbs.db

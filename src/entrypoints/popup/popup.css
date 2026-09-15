@@ -8,7 +8,7 @@ body {
   width: 320px;
   background: #1b1d21;
   color: #f4e6c3;
-  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-family: "Motiva Sans", "Segoe UI", Tahoma, sans-serif;
 }
 
 .popup {
@@ -38,10 +38,20 @@ ol {
   font-size: 11px;
 }
 
+.popup a,
+.popup-links a {
+  color: #ff7a2f;
+}
+
+.popup-links {
+  margin: 0 0 4px;
+  font-size: 12px;
+}
+
 button {
-  padding: 8px 12px;
+  padding: 6px 12px;
   border: 1px solid #6b3a16;
-  border-radius: 6px;
+  border-radius: 2px;
   background: #c4541a;
   color: #fff8ee;
   cursor: pointer;

@@ -1,5 +1,6 @@
 import { formatKeysRef } from '../prices/format';
-import type { Quote } from '../prices/types';
+import { t } from '../i18n';
+import type { Quote, QuoteFlag } from '../prices/types';
 
 function priceClass(quote: Quote): string {
   if (quote.midKeys == null) return 'tf2iv-price is-unknown';
@@ -22,30 +23,47 @@ function unusualSpreadLabel(quote: Quote): string | null {
   }
   if (lowKeys === midKeys && highKeys === midKeys) return null;
   const rate = midRef / midKeys;
-  return `buy ${formatKeysRef(lowKeys, lowKeys * rate)} / sell ${formatKeysRef(highKeys, highKeys * rate)}`;
+  return t('overlay_spread', {
+    buy: formatKeysRef(lowKeys, lowKeys * rate),
+    sell: formatKeysRef(highKeys, highKeys * rate),
+  });
+}
+
+function flagLabel(flag: QuoteFlag): string {
+  const keys = {
+    paint: 'flag_paint',
+    spelled: 'flag_spelled',
+    parts: 'flag_parts',
+    unusual: 'flag_unusual',
+    stale: 'flag_stale',
+    no_comps: 'flag_no_comps',
+    unpriced: 'flag_unpriced',
+    skipped: 'flag_skipped',
+  } as const;
+  return t(keys[flag]);
 }
 
 function priceTitle(quote: Quote, label: string): string {
   if (quote.flags.includes('unusual') && quote.midKeys == null) {
-    return 'Нет котировки по этому эффекту';
+    return t('overlay_no_effect');
   }
 
   const bits = [label];
   if (quote.flags.includes('unusual')) {
-    bits.push('unusual по эффекту');
+    bits.push(t('overlay_unusual_effect'));
     const spread = unusualSpreadLabel(quote);
     if (spread) bits.push(spread);
   }
 
   const extras = quote.flags.filter((flag) => flag !== 'unusual' && flag !== 'stale');
   if (extras.length > 0) {
-    bits.push(`база рынка, без наценки за: ${extras.join(', ')}`);
+    bits.push(t('overlay_base_no_markup', { extras: extras.map(flagLabel).join(', ') }));
   }
 
   return bits.join(' · ');
 }
 
-function findItemNode(assetid: string): HTMLElement | null {
+export function findItemNode(assetid: string): HTMLElement | null {
   const exact = [
     document.getElementById(`440_2_${assetid}`),
     document.getElementById(`item440_2_${assetid}`),
@@ -62,6 +80,8 @@ function findItemNode(assetid: string): HTMLElement | null {
 export function renderItemPrice(assetid: string, quote: Quote): void {
   const item = findItemNode(assetid);
   if (!item) return;
+  item.dataset.tf2ivAssetid = assetid;
+  item.closest('.itemHolder')?.setAttribute('data-tf2iv-assetid', assetid);
   item.style.position = 'relative';
 
   let badge = item.querySelector<HTMLElement>(':scope > .tf2iv-price');

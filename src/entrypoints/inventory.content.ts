@@ -4,7 +4,6 @@ import { fetchTf2InventoryPaged, resolveInventorySteamId } from '@/lib/steam/inv
 import { renderInventoryPrices } from '@/lib/ui/inventory-overlay';
 import {
   applyInventorySort,
-  INVENTORY_SORT_LABELS,
   INVENTORY_SORT_MODES,
   isInventorySortMode,
   sortAssetIds,
@@ -15,6 +14,7 @@ import { formatKeysRef } from '@/lib/prices/format';
 import { sumQuotes } from '@/lib/prices/lookup';
 import { fillAndQuote, getPriceStatus, chunkItems } from '@/lib/prices/quote-client';
 import { searchQueriesForItem } from '@/lib/prices/search-queries';
+import { t, type MessageKey } from '@/lib/i18n';
 import type { SkuPriceIndex } from '@/lib/prices/parse-pricedb';
 import type { Quote } from '@/lib/prices/types';
 import type { ItemPassport } from '@/lib/tf2/types';
@@ -25,6 +25,7 @@ const cachedItems: Record<string, ItemPassport> = {};
 let originalAssetIds: string[] = [];
 let currentSort: InventorySortMode = 'steam';
 let applyingSort = false;
+let steamSortApplied = false;
 let loading = false;
 
 const SORT_STORAGE = 'tf2iv.sortMode';
@@ -57,44 +58,29 @@ function sortableRows(): SortableItem[] {
   return rows;
 }
 
-function requestInventoryPages(): Promise<boolean> {
-  return new Promise((resolve) => {
-    let settled = false;
-    let timeout = 0;
-    const finish = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      document.removeEventListener('tf2iv-inventory-pages-ready', onReady);
-      window.clearTimeout(timeout);
-      resolve(ok);
-    };
-    const onReady = (event: Event) => {
-      finish((event as CustomEvent<{ ok?: boolean }>).detail?.ok !== false);
-    };
-    document.addEventListener('tf2iv-inventory-pages-ready', onReady);
-    const ping = () => document.dispatchEvent(new CustomEvent('tf2iv-load-inventory-pages'));
-    timeout = window.setTimeout(() => finish(false), 8000);
-    ping();
-    window.setTimeout(ping, 200);
-  });
+function relayoutSorted(): void {
+  const rows = sortableRows();
+  if (rows.length === 0) return;
+  applyInventorySort(sortAssetIds(rows, currentSort, originalAssetIds));
+  paintCachedPrices();
 }
 
-function relayoutSorted(): void {
+function requestSteamSort(assetIds: string[], restore: boolean): void {
+  steamSortApplied = false;
+  window.postMessage({ source: 'tf2iv', action: 'sort', assetIds, restore }, '*');
+}
+
+function applyCurrentSort(): void {
   const rows = sortableRows();
   if (rows.length === 0) return;
   const ids = sortAssetIds(rows, currentSort, originalAssetIds);
   applyingSort = true;
-  applyInventorySort(ids);
-  paintCachedPrices();
+  requestSteamSort(ids, currentSort === 'steam');
   window.setTimeout(() => {
+    if (!steamSortApplied) relayoutSorted();
+    else paintCachedPrices();
     applyingSort = false;
-  }, 50);
-}
-
-async function applyCurrentSort(): Promise<void> {
-  if (sortableRows().length === 0) return;
-  await requestInventoryPages();
-  relayoutSorted();
+  }, 150);
 }
 
 function isTf2InventoryView(): boolean {
@@ -102,9 +88,19 @@ function isTf2InventoryView(): boolean {
   return hash.startsWith(String(TF2_APPID)) || hash.length === 0;
 }
 
+const SORT_LABEL_KEYS: Record<InventorySortMode, MessageKey> = {
+  steam: 'sort_steam',
+  'price-desc': 'sort_price_desc',
+  unusual: 'sort_unusual',
+  spells: 'sort_spells',
+  paint: 'sort_paint',
+  parts: 'sort_parts',
+  killstreak: 'sort_killstreak',
+};
+
 function sortOptionsHtml(): string {
   return INVENTORY_SORT_MODES.map(
-    (mode) => `<option value="${mode}">${INVENTORY_SORT_LABELS[mode]}</option>`,
+    (mode) => `<option value="${mode}">${t(SORT_LABEL_KEYS[mode])}</option>`,
   ).join('');
 }
 
@@ -117,7 +113,13 @@ function bindSortSelect(banner: HTMLElement): void {
     const value = select.value;
     if (!isInventorySortMode(value)) return;
     rememberSort(value);
-    void applyCurrentSort();
+    applyCurrentSort();
+  });
+  select.addEventListener('input', () => {
+    const value = select.value;
+    if (!isInventorySortMode(value) || value === currentSort) return;
+    rememberSort(value);
+    applyCurrentSort();
   });
 }
 
@@ -133,14 +135,14 @@ function ensureBanner(): HTMLElement {
   banner.innerHTML = `
     <div>
       <strong>TF2 Inventory Value</strong>
-      <div class="tf2iv-muted" data-tf2iv-status>Загрузка…</div>
+      <div class="tf2iv-muted" data-tf2iv-status>${t('banner_loading')}</div>
     </div>
     <div class="tf2iv-actions">
       <label class="tf2iv-sort">
-        <span>Сортировка</span>
+        <span>${t('sort_label')}</span>
         <select data-tf2iv-sort>${sortOptionsHtml()}</select>
       </label>
-      <button type="button" data-tf2iv-refresh>Обновить</button>
+      <button type="button" data-tf2iv-refresh>${t('refresh')}</button>
     </div>
   `;
 
@@ -171,8 +173,8 @@ function showTotals(quotes: Record<string, Quote>, keyRef: number): void {
   const totals = sumQuotes(Object.values(quotes));
   const totalText = formatKeysRef(totals.keys, totals.ref, keyRef);
   const parts = [totalText];
-  if (totals.unpriced > 0) parts.push(`${totals.unpriced} без цены`);
-  if (totals.skipped > 0) parts.push(`${totals.skipped} не в торговле`);
+  if (totals.unpriced > 0) parts.push(t('status_unpriced', { count: totals.unpriced }));
+  if (totals.skipped > 0) parts.push(t('status_skipped', { count: totals.skipped }));
   setStatus(parts.join(' · '));
 }
 
@@ -192,7 +194,7 @@ async function loadPrices(force = false): Promise<void> {
   loading = true;
   const banner = ensureBanner();
   banner.style.display = 'flex';
-  setStatus(force ? 'Обновляю…' : 'Считаю инвентарь…');
+  setStatus(force ? t('status_updating') : t('status_counting'));
 
   let keyRef = 0;
   if (force) {
@@ -204,7 +206,7 @@ async function loadPrices(force = false): Promise<void> {
   try {
     const steamId = await resolveInventorySteamId();
     if (!steamId) {
-      setStatus('Не удалось определить SteamID профиля');
+      setStatus(t('status_no_steamid'));
       return;
     }
 
@@ -221,7 +223,7 @@ async function loadPrices(force = false): Promise<void> {
       for (const item of pageItems) {
         if (item.assetid) cachedItems[item.assetid] = item;
       }
-      setStatus(`Считаю… ${info.loaded} предметов`);
+      setStatus(t('status_counting_items', { count: info.loaded }));
       const result = await fillAndQuote(pageItems, localIndex, [], keyRef, (quotes, nextKeyRef) => {
         keyRef = nextKeyRef;
         Object.assign(cachedQuotes, quotes);
@@ -239,7 +241,7 @@ async function loadPrices(force = false): Promise<void> {
       return needsSearch(item, cachedQuotes[id]);
     });
     if (unresolved.length > 0) {
-      setStatus(`Добираю unusual и рецепты… ${unresolved.length}`);
+      setStatus(t('status_unusual_search', { count: unresolved.length }));
       const queries = [...new Set(unresolved.flatMap((item) => searchQueriesForItem(item)))].slice(0, 48);
       for (const chunk of chunkItems(queries, 12)) {
         const result = await fillAndQuote(unresolved, localIndex, chunk, keyRef, (quotes, nextKeyRef) => {
@@ -254,7 +256,7 @@ async function loadPrices(force = false): Promise<void> {
     }
 
     showTotals(cachedQuotes, keyRef);
-    if (currentSort !== 'steam') await applyCurrentSort();
+    if (currentSort !== 'steam') applyCurrentSort();
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error));
   } finally {
@@ -271,6 +273,13 @@ export default defineContentScript({
   main() {
     currentSort = readStoredSort();
     ensureBanner();
+    window.addEventListener('message', (event: MessageEvent<{ source?: string; action?: string; ok?: boolean }>) => {
+      if (event.source !== window) return;
+      const data = event.data;
+      if (!data || data.source !== 'tf2iv' || data.action !== 'sort-done') return;
+      steamSortApplied = Boolean(data.ok);
+      paintCachedPrices();
+    });
     void loadPrices();
     window.addEventListener('hashchange', () => {
       void loadPrices();
@@ -291,7 +300,7 @@ export default defineContentScript({
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         paintCachedPrices();
-        if (currentSort !== 'steam') relayoutSorted();
+        if (currentSort !== 'steam' && !steamSortApplied) relayoutSorted();
       }, 250);
     });
     observer.observe(root, { childList: true, subtree: true });
