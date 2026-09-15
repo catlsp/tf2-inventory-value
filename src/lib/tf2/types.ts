@@ -61,8 +61,15 @@ export type ItemPassport = {
   killstreak: KillstreakTier;
   sheen: string | null;
   killstreaker: string | null;
+  targetDefindex: number | null;
+  outputDefindex: number | null;
+  outputQuality: number | null;
+  targetName: string | null;
   craftNumber: number | null;
   gifted: boolean;
+  countsTowardValue: boolean;
+  slot: string | null;
+  crateSeries: number | null;
   sku: string | null;
   flags: string[];
 };
@@ -94,6 +101,8 @@ export type SteamItemDescription = {
   descriptions?: SteamDescriptionLine[];
   owner_descriptions?: SteamDescriptionLine[];
   tags?: SteamTag[];
+  actions?: Array<{ link?: string; name?: string }>;
+  market_actions?: Array<{ link?: string; name?: string }>;
   app_data?: {
     def_index?: string;
     quality?: string;

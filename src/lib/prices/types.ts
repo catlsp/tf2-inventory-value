@@ -7,9 +7,10 @@ export type QuoteFlag =
   | 'unusual'
   | 'stale'
   | 'no_comps'
-  | 'unpriced';
+  | 'unpriced'
+  | 'skipped';
 
-export type QuoteSource = 'schema' | 'classifieds' | 'hybrid' | 'none';
+export type QuoteSource = 'schema' | 'classifieds' | 'hybrid' | 'pricedb' | 'craft' | 'none';
 
 /** Result of the price engine. Phase 2+ fills this in; UI should tolerate null mids. */
 export type Quote = {

@@ -9,10 +9,17 @@ function priceClass(quote: Quote): string {
 }
 
 function findItemNode(assetid: string): HTMLElement | null {
-  return (
-    document.getElementById(`440_2_${assetid}`) ??
-    document.querySelector<HTMLElement>(`[id$="_${assetid}"]`)
-  );
+  const exact = [
+    document.getElementById(`440_2_${assetid}`),
+    document.getElementById(`item440_2_${assetid}`),
+  ];
+  for (const node of exact) {
+    if (node) return (node.closest('.item') as HTMLElement | null) ?? node;
+  }
+
+  const suffix = document.querySelector<HTMLElement>(`[id$="_${assetid}"]`);
+  if (suffix) return (suffix.closest('.item') as HTMLElement | null) ?? suffix;
+  return null;
 }
 
 export function renderItemPrice(assetid: string, quote: Quote): void {
@@ -30,12 +37,13 @@ export function renderItemPrice(assetid: string, quote: Quote): void {
   badge.textContent = formatKeysRef(quote.midKeys, quote.midRef);
   const extras = quote.flags.filter((flag) => flag !== 'unusual' && flag !== 'stale');
   badge.title = extras.length > 0
-    ? `${badge.textContent} · база схемы, не считая: ${extras.join(', ')}`
+    ? `${badge.textContent} · база рынка, без наценки за: ${extras.join(', ')}`
     : badge.textContent ?? '';
 }
 
 export function renderInventoryPrices(quotes: Record<string, Quote>): void {
   for (const [assetid, quote] of Object.entries(quotes)) {
+    if (quote.flags.includes('skipped')) continue;
     renderItemPrice(assetid, quote);
   }
 }

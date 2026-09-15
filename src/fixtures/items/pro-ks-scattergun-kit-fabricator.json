@@ -1,0 +1,20 @@
+{
+  "classid": "27",
+  "instanceid": "0",
+  "name": "Professional Killstreak Scattergun Kit Fabricator",
+  "market_hash_name": "Professional Killstreak Scattergun Kit Fabricator",
+  "tradable": 1,
+  "type": "Level 5 Recipe",
+  "app_data": { "def_index": "20003", "quality": "6" },
+  "tags": [
+    { "category": "Quality", "internal_name": "Unique", "localized_tag_name": "Unique" },
+    { "category": "Type", "internal_name": "TF_ItemCraftRecipe", "localized_tag_name": "Recipe" }
+  ],
+  "descriptions": [
+    { "value": "This item has a set of inputs that, once fulfilled, will reward you with what's listed in its outputs." },
+    { "value": "You will receive all of this:" },
+    { "value": "Professional Killstreak Scattergun Kit" },
+    { "value": "Sheen: Team Shine" },
+    { "value": "Killstreaker: Fire Horns" }
+  ]
+}

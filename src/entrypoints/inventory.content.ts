@@ -5,14 +5,14 @@ import { renderInventoryPrices } from '@/lib/ui/inventory-overlay';
 import { formatKeysRef } from '@/lib/prices/format';
 import { sumQuotes } from '@/lib/prices/lookup';
 import type { Quote } from '@/lib/prices/types';
-import type { QuoteResponse, StatusResponse } from '@/lib/messages';
+import type { QuoteResponse } from '@/lib/messages';
 
 let cachedQuotes: Record<string, Quote> = {};
 let loading = false;
 
 function isTf2InventoryView(): boolean {
   const hash = window.location.hash.replace(/^#/, '');
-  return hash.startsWith(String(TF2_APPID)) || !window.location.hash;
+  return hash.startsWith(String(TF2_APPID)) || hash.length === 0;
 }
 
 function ensureBanner(): HTMLElement {
@@ -27,18 +27,18 @@ function ensureBanner(): HTMLElement {
       <div class="tf2iv-muted" data-tf2iv-status>Загрузка…</div>
     </div>
     <div class="tf2iv-actions">
-      <button type="button" data-tf2iv-refresh>Обновить цены</button>
-      <button type="button" data-tf2iv-options>Ключ API</button>
+      <button type="button" data-tf2iv-refresh>Обновить</button>
     </div>
   `;
 
-  const inventoryPage = document.getElementById('inventory_page_left') ?? document.getElementById('inventories');
+  const inventoryPage =
+    document.getElementById('inventory_page_left') ??
+    document.getElementById('inventories') ??
+    document.getElementById('tabcontent_inventory') ??
+    document.querySelector('.inventory_page_right');
   (inventoryPage?.parentElement ?? document.body).prepend(banner);
   banner.querySelector('[data-tf2iv-refresh]')?.addEventListener('click', () => {
     void loadPrices(true);
-  });
-  banner.querySelector('[data-tf2iv-options]')?.addEventListener('click', () => {
-    void browser.runtime.openOptionsPage();
   });
   return banner;
 }
@@ -65,12 +65,6 @@ async function loadPrices(force = false): Promise<void> {
   setStatus(force ? 'Обновляю прайслист…' : 'Считаю инвентарь…');
 
   try {
-    const status = await browser.runtime.sendMessage({ type: 'GET_PRICE_STATUS' }) as StatusResponse;
-    if (status.ok && !status.status.hasApiKey) {
-      setStatus('Укажите backpack.tf API key: кнопка «Ключ API»');
-      return;
-    }
-
     const steamId = await resolveInventorySteamId();
     if (!steamId) {
       setStatus('Не удалось определить SteamID профиля');
@@ -94,9 +88,12 @@ async function loadPrices(force = false): Promise<void> {
     cachedQuotes = response.quotes;
     paintCachedPrices();
     const totals = sumQuotes(Object.values(response.quotes));
-    const totalText = formatKeysRef(totals.keys, totals.keys * (response.status.keyRef ?? 0));
-    const extras = totals.unpriced > 0 ? ` · ${totals.unpriced} без цены` : '';
-    setStatus(`${totalText}${extras}`);
+    const keyRef = response.status.keyRef ?? 0;
+    const totalText = formatKeysRef(totals.keys, totals.ref, keyRef);
+    const parts = [totalText];
+    if (totals.unpriced > 0) parts.push(`${totals.unpriced} без цены`);
+    if (totals.skipped > 0) parts.push(`${totals.skipped} не в торговле`);
+    setStatus(parts.join(' · '));
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error));
   } finally {
@@ -117,22 +114,20 @@ export default defineContentScript({
       void loadPrices();
     });
 
-    const inventories = document.getElementById('inventories');
-    if (inventories) {
-      let timer = 0;
-      const observer = new MutationObserver((mutations) => {
-        const ours = mutations.every((mutation) =>
-          Array.from(mutation.addedNodes).every(
-            (node) => node instanceof HTMLElement && node.classList.contains('tf2iv-price'),
-          ),
-        );
-        if (ours) return;
-        window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-          paintCachedPrices();
-        }, 250);
-      });
-      observer.observe(inventories, { childList: true, subtree: true });
-    }
+    const root = document.getElementById('inventories') ?? document.body;
+    let timer = 0;
+    const observer = new MutationObserver((mutations) => {
+      const ours = mutations.every((mutation) =>
+        Array.from(mutation.addedNodes).every(
+          (node) => node instanceof HTMLElement && node.classList.contains('tf2iv-price'),
+        ),
+      );
+      if (ours) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        paintCachedPrices();
+      }, 250);
+    });
+    observer.observe(root, { childList: true, subtree: true });
   },
 });

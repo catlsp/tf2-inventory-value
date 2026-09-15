@@ -1,0 +1,13 @@
+{
+  "classid": "22",
+  "instanceid": "0",
+  "name": "Refined Metal",
+  "market_hash_name": "Refined Metal",
+  "tradable": 1,
+  "type": "Level 1 Craft Item",
+  "app_data": { "def_index": "5002", "quality": "6" },
+  "tags": [
+    { "category": "Quality", "internal_name": "Unique", "localized_tag_name": "Unique" },
+    { "category": "Type", "internal_name": "craft_item", "localized_tag_name": "Craft Item" }
+  ]
+}

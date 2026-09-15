@@ -1,0 +1,14 @@
+{
+  "classid": "24",
+  "instanceid": "0",
+  "name": "Mann Co. Supply Crate",
+  "market_hash_name": "Mann Co. Supply Crate Series #82",
+  "tradable": 1,
+  "type": "Level 10 Supply Crate",
+  "app_data": { "def_index": "5022", "quality": "6" },
+  "tags": [
+    { "category": "Quality", "internal_name": "Unique", "localized_tag_name": "Unique" },
+    { "category": "Type", "internal_name": "supply_crate", "localized_tag_name": "Crate" }
+  ],
+  "descriptions": [{ "value": "Crate Series #82" }]
+}

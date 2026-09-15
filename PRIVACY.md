@@ -1,27 +1,32 @@
 # Privacy policy — TF2 Inventory Value
 
-Last updated: 2026-09-10
+Last updated: 2026-09-14
 
-TF2 Inventory Value is an unofficial browser extension. It is not affiliated with Valve, Steam, or backpack.tf.
+TF2 Inventory Value is an unofficial browser extension. It is not affiliated with Valve, Steam, backpack.tf, or pricedb.io.
 
 ## Data the extension reads
 
-- Public Steam Community pages you open (inventory and trade offer).
-- Item descriptions needed to identify TF2 items (defindex, quality, unusual effect, paint, spells, parts).
+- Steam Community inventory and trade offer pages you open.
+- Item descriptions needed to identify TF2 items.
+
+## Network requests
+
+- `steamcommunity.com` — your/public TF2 inventory JSON while you view those pages.
+- `pricedb.io` — public item price list. The extension does not send your Steam inventory to pricedb.io; it only downloads prices.
 
 ## Data the extension does not collect
 
 - Steam passwords, email, or Mobile Authenticator codes.
 - Payment data.
-- Analytics SDKs or advertising IDs.
+- Analytics or advertising trackers.
 
-The current version does not send inventory contents to a developer-operated server. Item data stays in the browser unless you later enable an optional price proxy (documented in the README).
+Nothing is sent to a server operated by the extension author.
 
 ## Permissions
 
-- `storage` — local settings (for example display units).
+- `storage` — cache of the public pricelist on your computer.
 - `steamcommunity.com` — overlay on inventory and trade offer pages.
-- `backpack.tf` — reserved for price lookups in a later version.
+- `pricedb.io` — download prices.
 
 ## Contact
 

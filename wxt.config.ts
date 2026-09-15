@@ -13,7 +13,7 @@ export default defineConfig({
     permissions: ['storage'],
     host_permissions: [
       'https://steamcommunity.com/*',
-      'https://backpack.tf/*',
+      'https://pricedb.io/*',
     ],
   },
 });

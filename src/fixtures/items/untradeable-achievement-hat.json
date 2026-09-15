@@ -1,0 +1,23 @@
+{
+  "classid": "10",
+  "instanceid": "0",
+  "name": "World Traveler's Hat",
+  "market_hash_name": "World Traveler's Hat",
+  "tradable": 0,
+  "marketable": 0,
+  "type": "Level 1 Hat",
+  "app_data": {
+    "def_index": "777",
+    "quality": "6"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "Unique",
+      "localized_tag_name": "Unique"
+    }
+  ],
+  "descriptions": [
+    { "value": "( Not Tradable or Marketable )" }
+  ]
+}

@@ -2,7 +2,6 @@ import type { ItemPassport } from './tf2/types';
 import type { Quote } from './prices/types';
 
 export type PriceStatus = {
-  hasApiKey: boolean;
   ready: boolean;
   fetching: boolean;
   error: string | null;

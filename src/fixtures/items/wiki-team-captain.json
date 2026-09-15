@@ -1,0 +1,24 @@
+{
+  "classid": "9",
+  "instanceid": "0",
+  "name": "Team Captain",
+  "market_hash_name": "Team Captain",
+  "tradable": 1,
+  "type": "Level 50 Hat",
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "Unique",
+      "localized_tag_name": "Unique"
+    }
+  ],
+  "actions": [
+    {
+      "name": "Item Wiki Page...",
+      "link": "http://wiki.teamfortress.com/scripts/itemredirect.php?id=378&lang=en_US"
+    }
+  ],
+  "descriptions": [
+    { "value": "Our enemies will cower at the sight of our Team Captain!" }
+  ]
+}

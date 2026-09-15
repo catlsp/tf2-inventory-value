@@ -8,6 +8,15 @@ import strangeParts from '../../fixtures/items/strange-scattergun-parts.json';
 import australium from '../../fixtures/items/australium-minigun.json';
 import proKs from '../../fixtures/items/pro-ks-flamethrower.json';
 import uncraftable from '../../fixtures/items/uncraftable-key.json';
+import wikiHat from '../../fixtures/items/wiki-team-captain.json';
+import achievementHat from '../../fixtures/items/untradeable-achievement-hat.json';
+import scrapMetal from '../../fixtures/items/scrap-metal.json';
+import reclaimedMetal from '../../fixtures/items/reclaimed-metal.json';
+import refinedMetal from '../../fixtures/items/refined-metal.json';
+import scattergun from '../../fixtures/items/unique-scattergun.json';
+import crate82 from '../../fixtures/items/mann-co-crate-82.json';
+import tourTicket from '../../fixtures/items/tour-of-duty-ticket.json';
+import fabricator from '../../fixtures/items/pro-ks-scattergun-kit-fabricator.json';
 import type { SteamItemDescription } from './types';
 
 describe('parseSteamDescription', () => {
@@ -59,7 +68,7 @@ describe('parseSteamDescription', () => {
     const item = parseSteamDescription(australium as SteamItemDescription);
     expect(item.australium).toBe(true);
     expect(item.quality).toBe('Strange');
-    expect(item.sku).toBe('15;11;australium');
+    expect(item.sku).toBe('202;11;australium');
   });
 
   it('detects professional killstreak sheen and killstreaker', () => {
@@ -68,6 +77,20 @@ describe('parseSteamDescription', () => {
     expect(item.sheen).toBe('Manndarin');
     expect(item.killstreaker).toBe('Fire Horns');
     expect(item.sku).toBe('208;6;kt-3');
+    expect(item.targetDefindex).toBeNull();
+  });
+
+  it('parses a professional killstreak kit fabricator as a recipe SKU', () => {
+    const item = parseSteamDescription(fabricator as SteamItemDescription);
+    expect(item.defindex).toBe(20003);
+    expect(item.killstreak).toBe(3);
+    expect(item.targetName).toBe('Scattergun');
+    expect(item.targetDefindex).toBe(200);
+    expect(item.outputDefindex).toBe(6526);
+    expect(item.outputQuality).toBe(6);
+    expect(item.sheen).toBe('Team Shine');
+    expect(item.killstreaker).toBe('Fire Horns');
+    expect(item.sku).toBe('20003;6;kt-3;td-200;od-6526;oq-6');
   });
 
   it('marks uncraftable keys', () => {
@@ -75,5 +98,37 @@ describe('parseSteamDescription', () => {
     expect(item.craftable).toBe(false);
     expect(item.sku).toBe('5021;6;uncraftable');
     expect(item.flags).toContain('uncraftable');
+  });
+
+  it('reads defindex from the TF wiki action when app_data is missing', () => {
+    const item = parseSteamDescription(wikiHat as SteamItemDescription);
+    expect(item.defindex).toBe(378);
+    expect(item.sku).toBe('378;6');
+  });
+
+  it('does not value achievement items that cannot be traded', () => {
+    const item = parseSteamDescription(achievementHat as SteamItemDescription);
+    expect(item.countsTowardValue).toBe(false);
+    expect(item.flags).toContain('untradeable');
+  });
+
+  it('maps stock scattergun defindex to the economy SKU', () => {
+    const item = parseSteamDescription(scattergun as SteamItemDescription);
+    expect(item.defindex).toBe(200);
+    expect(item.slot).toBe('primary');
+    expect(item.sku).toBe('200;6');
+  });
+
+  it('reads crate series into the SKU', () => {
+    const item = parseSteamDescription(crate82 as SteamItemDescription);
+    expect(item.crateSeries).toBe(82);
+    expect(item.sku).toBe('5022;6;c82');
+  });
+
+  it('keeps metal and MvM ticket defindexes', () => {
+    expect(parseSteamDescription(scrapMetal as SteamItemDescription).defindex).toBe(5000);
+    expect(parseSteamDescription(reclaimedMetal as SteamItemDescription).defindex).toBe(5001);
+    expect(parseSteamDescription(refinedMetal as SteamItemDescription).defindex).toBe(5002);
+    expect(parseSteamDescription(tourTicket as SteamItemDescription).sku).toBe('725;6');
   });
 });

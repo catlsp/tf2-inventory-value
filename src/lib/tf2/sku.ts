@@ -17,6 +17,10 @@ export function toSku(item: Pick<
   | 'killstreak'
   | 'paint'
   | 'elevatedStrange'
+  | 'crateSeries'
+  | 'targetDefindex'
+  | 'outputDefindex'
+  | 'outputQuality'
 >): string | null {
   if (item.defindex == null || item.qualityId == null) return null;
 
@@ -29,6 +33,10 @@ export function toSku(item: Pick<
   if (item.killstreak) parts.push(`kt-${item.killstreak}`);
   if (item.paint?.defindex != null) parts.push(`p${item.paint.defindex}`);
   if (item.elevatedStrange) parts.push('strange');
+  if (item.crateSeries != null) parts.push(`c${item.crateSeries}`);
+  if (item.targetDefindex != null) parts.push(`td-${item.targetDefindex}`);
+  if (item.targetDefindex != null && item.outputDefindex != null) parts.push(`od-${item.outputDefindex}`);
+  if (item.targetDefindex != null && item.outputQuality != null) parts.push(`oq-${item.outputQuality}`);
 
   return parts.join(';');
 }

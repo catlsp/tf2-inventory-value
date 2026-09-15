@@ -1,0 +1,13 @@
+{
+  "classid": "25",
+  "instanceid": "0",
+  "name": "Tour of Duty Ticket",
+  "market_hash_name": "Tour of Duty Ticket",
+  "tradable": 1,
+  "type": "Level 1 Ticket",
+  "app_data": { "def_index": "725", "quality": "6" },
+  "tags": [
+    { "category": "Quality", "internal_name": "Unique", "localized_tag_name": "Unique" },
+    { "category": "Type", "internal_name": "action", "localized_tag_name": "Action" }
+  ]
+}
