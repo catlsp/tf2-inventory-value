@@ -29,6 +29,24 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  align-items: center;
+}
+
+#tf2iv-banner .tf2iv-sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b7aa8f;
+  font-size: 12px;
+}
+
+#tf2iv-banner select {
+  padding: 6px 8px;
+  border: 1px solid #6b3a16;
+  border-radius: 6px;
+  background: #2a2d33;
+  color: #f4e6c3;
+  font-size: 12px;
 }
 
 #tf2iv-banner button {
