@@ -1,0 +1,23 @@
+{
+  "classid": "28",
+  "instanceid": "0",
+  "name": "Team Captain",
+  "market_hash_name": "Unusual Team Captain",
+  "tradable": 1,
+  "type": "Level 12 Hat",
+  "app_data": {
+    "def_index": "378",
+    "quality": "5"
+  },
+  "tags": [
+    {
+      "category": "Quality",
+      "internal_name": "rarity4",
+      "localized_tag_name": "Unusual"
+    }
+  ],
+  "descriptions": [
+    { "value": "★ Unusual Effect: Completely Fake Effect" },
+    { "value": "Our enemies will cower at the sight of our Team Captain!" }
+  ]
+}

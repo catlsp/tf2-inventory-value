@@ -122,10 +122,14 @@ export function pickSkuForName(
     pool = matched;
   }
 
-  if (item.effect?.id != null) {
-    const withEffect = pool.filter((sku) => sku.includes(`;u${item.effect!.id}`));
-    if (withEffect.length === 0) return null;
-    pool = withEffect;
+  if (item.quality === 'Unusual' || item.qualityId === 5) {
+    if (item.effect?.id != null) {
+      const withEffect = pool.filter((sku) => skuHasPart(sku, `u${item.effect!.id}`));
+      if (withEffect.length === 0) return null;
+      pool = withEffect;
+    } else {
+      return null;
+    }
   } else {
     pool = pool.filter((sku) => !/;u\d/.test(sku));
   }

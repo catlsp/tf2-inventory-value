@@ -3,8 +3,10 @@ import { buildSkuIndex, keyRefFromSkuIndex, pickSkuForName, upsertPrices } from 
 import { quoteItem } from './lookup';
 import { formatKeysRef } from './format';
 import { parseSteamDescription } from '../tf2/parse-steam-item';
+import { skuCandidates } from '../tf2/sku-candidates';
 import uniqueHat from '../../fixtures/items/unique-team-captain.json';
 import unusualHat from '../../fixtures/items/unusual-burning-flames-team-captain.json';
+import unknownEffect from '../../fixtures/items/unusual-unknown-effect.json';
 import paintedHat from '../../fixtures/items/painted-bills-hat.json';
 import spelledUnusual from '../../fixtures/items/spelled-unusual.json';
 import achievementHat from '../../fixtures/items/untradeable-achievement-hat.json';
@@ -123,12 +125,91 @@ describe('PriceDB quotes', () => {
     expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('1 key 20 ref');
   });
 
+  it('quotes unique Community Sparkle as 378;6, not ;u4', () => {
+    const item = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '6' },
+      tags: [{ category: 'Quality', internal_name: 'Unique', localized_tag_name: 'Unique' }],
+      descriptions: [{ value: '★ Unusual Effect: Community Sparkle' }],
+    } as SteamItemDescription);
+    expect(item.sku).toBe('378;6');
+    expect(skuCandidates(item).every((sku) => !sku.split(';').includes('u4'))).toBe(true);
+    const quote = quoteItem(item, index, keyRef);
+    expect(quote.midRef).toBe(70);
+    expect(quote.confidence).toBe('high');
+  });
+
   it('quotes unusuals by effect SKU, not the craft hat', () => {
     const item = parseSteamDescription(unusualHat as SteamItemDescription);
     const quote = quoteItem(item, index, keyRef);
+    expect(item.sku).toBe('378;5;u13');
     expect(quote.midKeys).toBe(40);
+    expect(quote.midRef).toBe(2000);
     expect(quote.flags).toContain('unusual');
     expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('40 keys');
+  });
+
+  it('leaves an unknown-effect unusual unpriced even if 378;5 and 378;6 exist', () => {
+    const withBareUnusual = upsertPrices(
+      {
+        items: [
+          {
+            sku: '378;5',
+            name: 'Team Captain',
+            buy: { keys: 5, metal: 0 },
+            sell: { keys: 5, metal: 0 },
+            time: Math.floor(Date.now() / 1000),
+          },
+        ],
+      },
+      { ...index },
+    );
+    const item = parseSteamDescription(unknownEffect as SteamItemDescription);
+    const quote = quoteItem(item, withBareUnusual, keyRef);
+    expect(item.effect).toEqual({ id: null, name: 'Completely Fake Effect' });
+    expect(quote.midKeys).toBeNull();
+    expect(quote.midRef).toBeNull();
+    expect(quote.flags).toEqual(['unpriced', 'unusual', 'no_comps']);
+  });
+
+  it('keeps only u13 SKUs for Burning Flames Team Captain', () => {
+    const item = parseSteamDescription(unusualHat as SteamItemDescription);
+    const candidates = skuCandidates(item);
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.every((sku) => sku.split(';').includes('u13'))).toBe(true);
+    expect(candidates).not.toContain('378;5');
+    expect(candidates).not.toContain('378;6');
+  });
+
+  it('returns no SKU candidates for an unusual without an effect id', () => {
+    const item = parseSteamDescription(unknownEffect as SteamItemDescription);
+    expect(skuCandidates(item)).toEqual([]);
+  });
+
+  it('returns no SKU candidates for Showstopper until Steam sends a particle id', () => {
+    const byName = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Unusual Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '5' },
+      tags: [{ category: 'Quality', internal_name: 'rarity4', localized_tag_name: 'Unusual' }],
+      descriptions: [{ value: '★ Unusual Effect: Showstopper' }],
+    } as SteamItemDescription);
+    expect(skuCandidates(byName)).toEqual([]);
+
+    const fromTag = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Unusual Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '5' },
+      tags: [
+        { category: 'Quality', internal_name: 'rarity4', localized_tag_name: 'Unusual' },
+        { category: 'Particle', internal_name: 'particle_3001', localized_tag_name: 'Showstopper' },
+      ],
+    } as SteamItemDescription);
+    expect(skuCandidates(fromTag).every((sku) => sku.split(';').includes('u3001'))).toBe(true);
   });
 
   it('falls back to unpainted SKU and flags paint', () => {
@@ -170,7 +251,7 @@ describe('PriceDB quotes', () => {
     expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('0.05 ref');
   });
 
-  it('counts crate series SKUs in refined', () => {
+  it('counts crate series SKUs at buy', () => {
     const item = parseSteamDescription(crate82 as SteamItemDescription);
     const quote = quoteItem(item, index, keyRef);
     expect(item.sku).toBe('5022;6;c82');
@@ -183,11 +264,63 @@ describe('PriceDB quotes', () => {
     expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('29 ref');
   });
 
-  it('quotes MvM robot parts at buy, not the buy/sell midpoint', () => {
+  it('quotes MvM robot parts at buy, not a buy/sell midpoint', () => {
     const item = parseSteamDescription(robotPart as SteamItemDescription);
     const quote = quoteItem(item, index, keyRef);
     expect(item.sku).toBe('5704;6');
     expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('0.11 ref');
+  });
+
+  it('quotes MvM robot parts at buy when sell is a wide garbage spread', () => {
+    const wide = buildSkuIndex({
+      items: [
+        {
+          sku: '5704;6',
+          name: 'Reinforced Robot Bomb Stabilizer',
+          buy: { keys: 0, metal: 0.11 },
+          sell: { keys: 0, metal: 0.44 },
+          time: Math.floor(Date.now() / 1000),
+        },
+      ],
+    });
+    const item = parseSteamDescription(robotPart as SteamItemDescription);
+    const quote = quoteItem(item, wide, keyRef);
+    expect(item.sku).toBe('5704;6');
+    expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('0.11 ref');
+  });
+
+  it('quotes a unique hat at buy, not a 2.94-style midpoint', () => {
+    const tightHat = buildSkuIndex({
+      items: [
+        {
+          sku: '378;6',
+          name: 'Team Captain',
+          buy: { keys: 0, metal: 1.22 },
+          sell: { keys: 0, metal: 1.33 },
+          time: Math.floor(Date.now() / 1000),
+        },
+      ],
+    });
+    const item = parseSteamDescription(uniqueHat as SteamItemDescription);
+    const quote = quoteItem(item, tightHat, keyRef);
+    expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('1.22 ref');
+  });
+
+  it('does not turn a 2.88/3.00 hat spread into 2.94', () => {
+    const hat = buildSkuIndex({
+      items: [
+        {
+          sku: '378;6',
+          name: 'Team Captain',
+          buy: { keys: 0, metal: 2.88 },
+          sell: { keys: 0, metal: 3 },
+          time: Math.floor(Date.now() / 1000),
+        },
+      ],
+    });
+    const item = parseSteamDescription(uniqueHat as SteamItemDescription);
+    const quote = quoteItem(item, hat, keyRef);
+    expect(formatKeysRef(quote.midKeys, quote.midRef, keyRef)).toBe('2.88 ref');
   });
 
   it('quotes professional killstreak kit fabricators from the recipe SKU', () => {
@@ -222,6 +355,16 @@ describe('PriceDB quotes', () => {
       defindex: 378,
     });
     expect(sku).toBe('378;6');
+  });
+
+  it('returns null for an unusual without an effect id instead of 378;5', () => {
+    expect(
+      pickSkuForName(['378;5;u13', '378;5;u59', '378;5', '378;6'], {
+        quality: 'Unusual',
+        qualityId: 5,
+        defindex: 378,
+      }),
+    ).toBeNull();
   });
 
   it('prefers fabricator SKUs that keep td/od instead of the shortest row', () => {

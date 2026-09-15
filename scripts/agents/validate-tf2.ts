@@ -169,7 +169,16 @@ export async function validateTf2Pipeline(): Promise<ValidationReport> {
     }
 
     const candidates = skuCandidates(passport);
-    if (passport.defindex != null && passport.qualityId != null && candidates.length === 0) {
+    const unusualMissingEffect =
+      (passport.quality === 'Unusual' || passport.qualityId === 5) && passport.effect?.id == null;
+    if (unusualMissingEffect) {
+      if (candidates.length > 0) {
+        issue(issues, 'error', 'skuCandidates', 'Unusual without effect id must not produce SKU candidates.', {
+          fixture: file,
+          actual: candidates,
+        });
+      }
+    } else if (passport.defindex != null && passport.qualityId != null && candidates.length === 0) {
       issue(issues, 'error', 'skuCandidates', 'Expected SKU candidates but got none.', { fixture: file });
     }
 

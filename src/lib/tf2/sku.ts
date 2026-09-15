@@ -26,7 +26,7 @@ export function toSku(item: Pick<
 
   const parts = [`${item.defindex};${item.qualityId}`];
 
-  if (item.effect?.id != null) parts.push(`u${item.effect.id}`);
+  if (item.qualityId === 5 && item.effect?.id != null) parts.push(`u${item.effect.id}`);
   if (item.australium) parts.push('australium');
   if (!item.craftable) parts.push('uncraftable');
   if (item.festivized) parts.push('festive');

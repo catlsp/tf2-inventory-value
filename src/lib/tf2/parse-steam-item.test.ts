@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseSteamDescription } from './parse-steam-item';
 import uniqueHat from '../../fixtures/items/unique-team-captain.json';
 import unusualHat from '../../fixtures/items/unusual-burning-flames-team-captain.json';
+import unknownEffect from '../../fixtures/items/unusual-unknown-effect.json';
 import paintedHat from '../../fixtures/items/painted-bills-hat.json';
 import spelledUnusual from '../../fixtures/items/spelled-unusual.json';
 import strangeParts from '../../fixtures/items/strange-scattergun-parts.json';
@@ -34,6 +35,82 @@ describe('parseSteamDescription', () => {
     expect(item.quality).toBe('Unusual');
     expect(item.effect).toEqual({ id: 13, name: 'Burning Flames' });
     expect(item.sku).toBe('378;5;u13');
+    expect(item.flags).toContain('unusual');
+  });
+
+  it('parses unusual effect from HTML description and particle tags', () => {
+    const fromHtml = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Unusual Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '5' },
+      tags: [{ category: 'Quality', internal_name: 'rarity4', localized_tag_name: 'Unusual' }],
+      descriptions: [{ value: '<font color="#ffd700">★ Unusual Effect: Burning Flames</font>' }],
+    } as SteamItemDescription);
+    expect(fromHtml.effect).toEqual({ id: 13, name: 'Burning Flames' });
+    expect(fromHtml.sku).toBe('378;5;u13');
+
+    const fromTag = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Unusual Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '5' },
+      tags: [
+        { category: 'Quality', internal_name: 'rarity4', localized_tag_name: 'Unusual' },
+        { category: 'Particle', internal_name: 'particle_13', localized_tag_name: 'Burning Flames' },
+      ],
+    } as SteamItemDescription);
+    expect(fromTag.effect).toEqual({ id: 13, name: 'Burning Flames' });
+    expect(fromTag.sku).toBe('378;5;u13');
+  });
+
+  it('does not put Community Sparkle on a unique-hat SKU', () => {
+    const item = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '6' },
+      tags: [{ category: 'Quality', internal_name: 'Unique', localized_tag_name: 'Unique' }],
+      descriptions: [{ value: '★ Unusual Effect: Community Sparkle' }],
+    } as SteamItemDescription);
+    expect(item.effect).toEqual({ id: 4, name: 'Community Sparkle' });
+    expect(item.sku).toBe('378;6');
+    expect(item.sku).not.toContain(';u');
+  });
+
+  it('leaves Showstopper without an id unless Steam sent a particle number', () => {
+    const byName = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Unusual Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '5' },
+      tags: [{ category: 'Quality', internal_name: 'rarity4', localized_tag_name: 'Unusual' }],
+      descriptions: [{ value: '★ Unusual Effect: Showstopper' }],
+    } as SteamItemDescription);
+    expect(byName.effect).toEqual({ id: null, name: 'Showstopper' });
+    expect(byName.sku).toBe('378;5');
+    expect(byName.sku).not.toContain(';u');
+
+    const fromTag = parseSteamDescription({
+      name: 'Team Captain',
+      market_hash_name: 'Unusual Team Captain',
+      tradable: 1,
+      app_data: { def_index: '378', quality: '5' },
+      tags: [
+        { category: 'Quality', internal_name: 'rarity4', localized_tag_name: 'Unusual' },
+        { category: 'Particle', internal_name: 'particle_3001', localized_tag_name: 'Showstopper' },
+      ],
+    } as SteamItemDescription);
+    expect(fromTag.effect).toEqual({ id: 3001, name: 'Showstopper' });
+    expect(fromTag.sku).toBe('378;5;u3001');
+  });
+
+  it('keeps an unknown unusual effect without inventing an id', () => {
+    const item = parseSteamDescription(unknownEffect as SteamItemDescription);
+    expect(item.quality).toBe('Unusual');
+    expect(item.effect).toEqual({ id: null, name: 'Completely Fake Effect' });
+    expect(item.sku).toBe('378;5');
+    expect(item.sku).not.toContain(';u');
     expect(item.flags).toContain('unusual');
   });
 

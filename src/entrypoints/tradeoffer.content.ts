@@ -1,15 +1,18 @@
 import '@/assets/content.css';
-import { fetchTf2Inventory } from '@/lib/steam/inventory';
 import { tradeAssetIdsFromDocument, tradeSteamIdsFromHtml } from '@/lib/steam/trade-page';
+import { fetchTf2Inventory } from '@/lib/steam/inventory';
 import { formatDelta, formatKeysRef } from '@/lib/prices/format';
 import { sumQuotes } from '@/lib/prices/lookup';
+import { fillAndQuote } from '@/lib/prices/quote-client';
 import { renderInventoryPrices } from '@/lib/ui/inventory-overlay';
-import type { QuoteResponse } from '@/lib/messages';
+import type { SkuPriceIndex } from '@/lib/prices/parse-pricedb';
 import type { ItemPassport } from '@/lib/tf2/types';
 import type { Quote } from '@/lib/prices/types';
 
 let lastTradeKey = '';
 let lastQuotes: Record<string, Quote> = {};
+const tradePriceIndex: SkuPriceIndex = {};
+let tradeKeyRef = 0;
 
 function ensurePanel(): HTMLElement {
   const existing = document.getElementById('tf2iv-trade-panel');
@@ -44,13 +47,6 @@ function setStatus(text: string): void {
 function pick(items: ItemPassport[], assetIds: string[]): ItemPassport[] {
   const wanted = new Set(assetIds);
   return items.filter((item) => item.assetid && wanted.has(item.assetid));
-}
-
-async function quotePassports(items: ItemPassport[]): Promise<QuoteResponse> {
-  return browser.runtime.sendMessage({
-    type: 'QUOTE_ITEMS',
-    items,
-  }) as Promise<QuoteResponse>;
 }
 
 async function refreshTrade(): Promise<void> {
@@ -92,22 +88,18 @@ async function refreshTrade(): Promise<void> {
       return;
     }
 
-    const response = await quotePassports(all);
-    if (!response.ok) {
-      setStatus(response.error);
-      return;
-    }
-
+    const result = await fillAndQuote(all, tradePriceIndex, [], tradeKeyRef);
+    tradeKeyRef = result.keyRef;
     lastTradeKey = tradeKey;
-    lastQuotes = response.quotes;
+    lastQuotes = result.quotes;
 
-    const yourQuotes = yourItems.map((item) => response.quotes[item.assetid ?? '']).filter(Boolean) as Quote[];
-    const theirQuotes = theirItems.map((item) => response.quotes[item.assetid ?? '']).filter(Boolean) as Quote[];
-    renderInventoryPrices(response.quotes);
+    const yourQuotes = yourItems.map((item) => result.quotes[item.assetid ?? '']).filter(Boolean) as Quote[];
+    const theirQuotes = theirItems.map((item) => result.quotes[item.assetid ?? '']).filter(Boolean) as Quote[];
+    renderInventoryPrices(result.quotes);
 
     const yourSum = sumQuotes(yourQuotes);
     const theirSum = sumQuotes(theirQuotes);
-    const keyRef = response.status.keyRef ?? 0;
+    const keyRef = result.keyRef;
     rows?.removeAttribute('hidden');
     panel.querySelector('[data-tf2iv-yours]')!.textContent = formatKeysRef(yourSum.keys, yourSum.ref, keyRef);
     panel.querySelector('[data-tf2iv-theirs]')!.textContent = formatKeysRef(theirSum.keys, theirSum.ref, keyRef);
@@ -124,7 +116,7 @@ async function refreshTrade(): Promise<void> {
     const delta = theirSum.keys - yourSum.keys;
     deltaEl.className = delta >= 0 ? 'is-plus' : 'is-minus';
     deltaEl.textContent = `Δ ${formatDelta(delta, keyRef)}`;
-    setStatus('Оценка по buy с pricedb.io. Краска и спеллы не накручены.');
+    setStatus('Оценка по buy (продажа ботам backpack.tf). Краска и спеллы не накручены.');
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error));
   }

@@ -1,13 +1,17 @@
 import '@/assets/content.css';
 import { TF2_APPID } from '@/lib/tf2/types';
-import { fetchTf2Inventory, resolveInventorySteamId } from '@/lib/steam/inventory';
+import { fetchTf2InventoryPaged, resolveInventorySteamId } from '@/lib/steam/inventory';
 import { renderInventoryPrices } from '@/lib/ui/inventory-overlay';
 import { formatKeysRef } from '@/lib/prices/format';
 import { sumQuotes } from '@/lib/prices/lookup';
+import { fillAndQuote, getPriceStatus, chunkItems } from '@/lib/prices/quote-client';
+import { searchQueriesForItem } from '@/lib/prices/search-queries';
+import type { SkuPriceIndex } from '@/lib/prices/parse-pricedb';
 import type { Quote } from '@/lib/prices/types';
-import type { QuoteResponse } from '@/lib/messages';
+import type { ItemPassport } from '@/lib/tf2/types';
 
 let cachedQuotes: Record<string, Quote> = {};
+const localIndex: SkuPriceIndex = {};
 let loading = false;
 
 function isTf2InventoryView(): boolean {
@@ -53,6 +57,22 @@ function paintCachedPrices(): void {
   renderInventoryPrices(cachedQuotes);
 }
 
+function showTotals(quotes: Record<string, Quote>, keyRef: number): void {
+  const totals = sumQuotes(Object.values(quotes));
+  const totalText = formatKeysRef(totals.keys, totals.ref, keyRef);
+  const parts = [totalText];
+  if (totals.unpriced > 0) parts.push(`${totals.unpriced} без цены`);
+  if (totals.skipped > 0) parts.push(`${totals.skipped} не в торговле`);
+  setStatus(parts.join(' · '));
+}
+
+function needsSearch(item: ItemPassport, quote: Quote | undefined): boolean {
+  if (!item.countsTowardValue) return false;
+  if (quote?.flags.includes('skipped')) return false;
+  if (quote?.midKeys != null) return false;
+  return Boolean(item.effect || item.targetName || item.quality === 'Unusual' || item.defindex == null);
+}
+
 async function loadPrices(force = false): Promise<void> {
   if (!isTf2InventoryView()) {
     ensureBanner().style.display = 'none';
@@ -62,7 +82,10 @@ async function loadPrices(force = false): Promise<void> {
   loading = true;
   const banner = ensureBanner();
   banner.style.display = 'flex';
-  setStatus(force ? 'Обновляю прайслист…' : 'Считаю инвентарь…');
+  setStatus(force ? 'Обновляю…' : 'Считаю инвентарь…');
+
+  let keyRef = 0;
+  if (force) cachedQuotes = {};
 
   try {
     const steamId = await resolveInventorySteamId();
@@ -71,29 +94,47 @@ async function loadPrices(force = false): Promise<void> {
       return;
     }
 
-    const items = await fetchTf2Inventory(steamId);
     if (force) {
       await browser.runtime.sendMessage({ type: 'REFRESH_PRICES' });
     }
-    const response = await browser.runtime.sendMessage({
-      type: 'QUOTE_ITEMS',
-      items,
-    }) as QuoteResponse;
 
-    if (!response.ok) {
-      setStatus(response.error);
-      return;
+    const status = await getPriceStatus();
+    keyRef = status.keyRef ?? 0;
+
+    const all: ItemPassport[] = [];
+    await fetchTf2InventoryPaged(steamId, async (pageItems, info) => {
+      all.push(...pageItems);
+      setStatus(`Считаю… ${info.loaded} предметов`);
+      const result = await fillAndQuote(pageItems, localIndex, [], keyRef, (quotes, nextKeyRef) => {
+        keyRef = nextKeyRef;
+        Object.assign(cachedQuotes, quotes);
+        paintCachedPrices();
+      });
+      keyRef = result.keyRef;
+      Object.assign(cachedQuotes, result.quotes);
+      paintCachedPrices();
+    }, force);
+
+    const unresolved = all.filter((item) => {
+      const id = item.assetid ?? `${item.classid}_${item.instanceid}`;
+      return needsSearch(item, cachedQuotes[id]);
+    });
+    if (unresolved.length > 0) {
+      setStatus(`Добираю unusual и рецепты… ${unresolved.length}`);
+      const queries = [...new Set(unresolved.flatMap((item) => searchQueriesForItem(item)))].slice(0, 48);
+      for (const chunk of chunkItems(queries, 12)) {
+        const result = await fillAndQuote(unresolved, localIndex, chunk, keyRef, (quotes, nextKeyRef) => {
+          keyRef = nextKeyRef;
+          Object.assign(cachedQuotes, quotes);
+          paintCachedPrices();
+        });
+        keyRef = result.keyRef;
+        Object.assign(cachedQuotes, result.quotes);
+        paintCachedPrices();
+      }
     }
 
-    cachedQuotes = response.quotes;
-    paintCachedPrices();
-    const totals = sumQuotes(Object.values(response.quotes));
-    const keyRef = response.status.keyRef ?? 0;
-    const totalText = formatKeysRef(totals.keys, totals.ref, keyRef);
-    const parts = [totalText];
-    if (totals.unpriced > 0) parts.push(`${totals.unpriced} без цены`);
-    if (totals.skipped > 0) parts.push(`${totals.skipped} не в торговле`);
-    setStatus(parts.join(' · '));
+    showTotals(cachedQuotes, keyRef);
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error));
   } finally {

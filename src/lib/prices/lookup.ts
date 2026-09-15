@@ -42,10 +42,8 @@ function isReliablePremiumWeapon(matched: SkuPrice, keyRef: number): boolean {
 }
 
 function suggestedMetal(matched: SkuPrice, keyRef: number): number {
-  const buyMetal = metalOf(matched.buy, keyRef);
-  const sellMetal = metalOf(matched.sell, keyRef);
-  if (buyMetal > 0) return buyMetal;
-  if (sellMetal > 0) return sellMetal;
+  const buyM = metalOf(matched.buy, keyRef);
+  if (buyM > 0) return buyM;
   return 0;
 }
 
@@ -149,6 +147,10 @@ export function quoteItem(item: ItemPassport, index: SkuPriceIndex, keyRef: numb
       return quoteFromPrice(item, matched, keyRef);
     }
     return quoteMetal(item, WEAPON_REF, keyRef, [], 'craft');
+  }
+
+  if ((item.quality === 'Unusual' || item.qualityId === 5) && item.effect?.id == null) {
+    return emptyQuote(['unpriced', 'unusual', 'no_comps']);
   }
 
   const matched = matchPrice(item, index);

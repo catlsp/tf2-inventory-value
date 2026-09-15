@@ -8,6 +8,43 @@ function priceClass(quote: Quote): string {
   return 'tf2iv-price';
 }
 
+function unusualSpreadLabel(quote: Quote): string | null {
+  const { lowKeys, highKeys, midKeys, midRef } = quote;
+  if (
+    lowKeys == null ||
+    highKeys == null ||
+    midKeys == null ||
+    midRef == null ||
+    !(lowKeys > 0 && highKeys > 0) ||
+    midKeys === 0
+  ) {
+    return null;
+  }
+  if (lowKeys === midKeys && highKeys === midKeys) return null;
+  const rate = midRef / midKeys;
+  return `buy ${formatKeysRef(lowKeys, lowKeys * rate)} / sell ${formatKeysRef(highKeys, highKeys * rate)}`;
+}
+
+function priceTitle(quote: Quote, label: string): string {
+  if (quote.flags.includes('unusual') && quote.midKeys == null) {
+    return 'Нет котировки по этому эффекту';
+  }
+
+  const bits = [label];
+  if (quote.flags.includes('unusual')) {
+    bits.push('unusual по эффекту');
+    const spread = unusualSpreadLabel(quote);
+    if (spread) bits.push(spread);
+  }
+
+  const extras = quote.flags.filter((flag) => flag !== 'unusual' && flag !== 'stale');
+  if (extras.length > 0) {
+    bits.push(`база рынка, без наценки за: ${extras.join(', ')}`);
+  }
+
+  return bits.join(' · ');
+}
+
 function findItemNode(assetid: string): HTMLElement | null {
   const exact = [
     document.getElementById(`440_2_${assetid}`),
@@ -35,10 +72,7 @@ export function renderItemPrice(assetid: string, quote: Quote): void {
 
   badge.className = priceClass(quote);
   badge.textContent = formatKeysRef(quote.midKeys, quote.midRef);
-  const extras = quote.flags.filter((flag) => flag !== 'unusual' && flag !== 'stale');
-  badge.title = extras.length > 0
-    ? `${badge.textContent} · база рынка, без наценки за: ${extras.join(', ')}`
-    : badge.textContent ?? '';
+  badge.title = priceTitle(quote, badge.textContent ?? '');
 }
 
 export function renderInventoryPrices(quotes: Record<string, Quote>): void {

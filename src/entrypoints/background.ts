@@ -6,10 +6,10 @@ import {
   type SkuPriceIndex,
 } from '@/lib/prices/parse-pricedb';
 import { quoteItem } from '@/lib/prices/lookup';
-import { skuCandidates } from '@/lib/tf2/sku-candidates';
-import { isCurrencyDefindex, isMannCoKey, isPlainCraftWeapon } from '@/lib/tf2/economy';
+import { toSku } from '@/lib/tf2/sku';
+import { mapPool } from '@/lib/net/http';
 import type { PriceCache } from '@/lib/settings';
-import type { PriceStatus, QuoteResponse, Tf2ivRequest } from '@/lib/messages';
+import type { GetPricesResponse, PriceStatus, QuoteResponse, Tf2ivRequest } from '@/lib/messages';
 import type { Quote } from '@/lib/prices/types';
 import type { ItemPassport } from '@/lib/tf2/types';
 
@@ -84,11 +84,10 @@ async function fetchBulk(skus: string[]): Promise<SkuPriceIndex> {
 async function searchName(query: string): Promise<SkuPriceIndex> {
   const url = new URL(SEARCH_URL);
   url.searchParams.set('q', query);
-  url.searchParams.set('limit', '10');
+  url.searchParams.set('limit', '50');
   const response = await fetch(url);
   if (!response.ok) return {};
-  const payload = await response.json();
-  return upsertPrices(payload);
+  return upsertPrices(await response.json());
 }
 
 async function ensureKey(cache: PriceCache, force: boolean): Promise<PriceCache> {
@@ -108,7 +107,7 @@ async function ensureKey(cache: PriceCache, force: boolean): Promise<PriceCache>
 }
 
 async function fillPrices(cache: PriceCache, skus: string[]): Promise<PriceCache> {
-  const missing = [...new Set(skus)].filter((sku) => !cache.index[sku]);
+  const missing = [...new Set(skus)].filter((sku) => sku && !cache.index[sku]);
   if (missing.length === 0) return cache;
   const fetched = await fetchBulk(missing);
   const next: PriceCache = {
@@ -120,32 +119,13 @@ async function fillPrices(cache: PriceCache, skus: string[]): Promise<PriceCache
   return next;
 }
 
-function searchQueries(item: ItemPassport): string[] {
-  const queries: string[] = [];
-  const add = (value: string | null | undefined) => {
-    const text = value?.trim();
-    if (text) queries.push(text);
-  };
-  add(item.marketHashName);
-  add(item.name);
-  if (item.targetName) {
-    const tier =
-      item.killstreak === 3
-        ? 'Professional Killstreak'
-        : item.killstreak === 2
-          ? 'Specialized Killstreak'
-          : 'Killstreak';
-    const fabricator =
-      item.outputDefindex != null ||
-      /kit fabricator/i.test(item.marketHashName) ||
-      /kit fabricator/i.test(item.name);
-    add(
-      fabricator
-        ? `${tier} ${item.targetName} Kit Fabricator`
-        : `${tier} ${item.targetName} Kit`,
-    );
+function slicePrices(cache: PriceCache, skus: string[], extra: SkuPriceIndex = {}): SkuPriceIndex {
+  const prices: SkuPriceIndex = { ...extra };
+  if (cache.index[KEY_SKU]) prices[KEY_SKU] = cache.index[KEY_SKU];
+  for (const sku of skus) {
+    if (cache.index[sku]) prices[sku] = cache.index[sku];
   }
-  return [...new Set(queries)];
+  return prices;
 }
 
 function quoteItems(items: ItemPassport[], cache: PriceCache): QuoteResponse {
@@ -161,6 +141,29 @@ function quoteItems(items: ItemPassport[], cache: PriceCache): QuoteResponse {
   };
 }
 
+async function handleGetPrices(skus: string[], searchQueries: string[]): Promise<GetPricesResponse> {
+  let cache = (await loadCache()) ?? emptyCache();
+  cache = await ensureKey(cache, false);
+  cache = await fillPrices(cache, skus);
+  let extra: SkuPriceIndex = {};
+  if (searchQueries.length > 0) {
+    const found = await mapPool([...new Set(searchQueries)].slice(0, 24), 6, searchName);
+    extra = {};
+    for (const row of found) Object.assign(extra, row);
+    cache = {
+      ...cache,
+      fetchedAt: Date.now(),
+      index: { ...cache.index, ...extra },
+    };
+    await persist(cache);
+  }
+  return {
+    ok: true,
+    status: statusFrom(cache),
+    prices: slicePrices(cache, skus, extra),
+  };
+}
+
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message: Tf2ivRequest) => {
     return (async () => {
@@ -171,37 +174,27 @@ export default defineBackground(() => {
       fetching = true;
       lastError = null;
       try {
-        let cache = (await loadCache()) ?? emptyCache();
-        cache = await ensureKey(cache, message.type === 'REFRESH_PRICES');
-
         if (message.type === 'REFRESH_PRICES') {
-          cache = { ...cache, index: { ...cache.index } };
-          await persist(cache);
+          let cache = (await loadCache()) ?? emptyCache();
+          cache = await ensureKey(cache, true);
           return { ok: true, status: statusFrom(cache) };
         }
 
+        if (message.type === 'GET_PRICES') {
+          return await handleGetPrices(message.skus, message.searchQueries ?? []);
+        }
+
+        if (message.type !== 'QUOTE_ITEMS') {
+          return { ok: false, status: statusFrom(await loadCache()), error: 'Unknown message' };
+        }
+
+        let cache = (await loadCache()) ?? emptyCache();
+        cache = await ensureKey(cache, false);
         const wantedSkus = [...new Set(message.items
           .filter((item) => item.countsTowardValue)
-          .flatMap((item) => skuCandidates(item)))];
+          .map((item) => toSku(item))
+          .filter((sku): sku is string => Boolean(sku)))];
         cache = await fillPrices(cache, wantedSkus);
-
-        const unresolved = message.items.filter((item) => (
-          item.countsTowardValue && quoteItem(item, cache.index, cache.keyRef).midKeys == null
-        ));
-        const uniqueNames = [...new Set(unresolved
-          .filter((item) => !isCurrencyDefindex(item.defindex) && !isMannCoKey(item) && !isPlainCraftWeapon(item))
-          .flatMap((item) => searchQueries(item)))];
-        for (const name of uniqueNames.slice(0, 40)) {
-          const found = await searchName(name);
-          if (Object.keys(found).length > 0) {
-            cache = {
-              ...cache,
-              index: { ...cache.index, ...found },
-            };
-          }
-        }
-        if (uniqueNames.length > 0) await persist(cache);
-
         return quoteItems(message.items, cache);
       } catch (error) {
         const text = error instanceof Error ? error.message : String(error);

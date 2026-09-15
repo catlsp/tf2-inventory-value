@@ -9,11 +9,17 @@ function recipeSuffix(item: ItemPassport): string {
   return `${td}${od}${oq}`;
 }
 
+function skuHasPart(sku: string, part: string): boolean {
+  return sku.split(';').includes(part);
+}
+
 /** SKU variants to try against PriceDB / Autobot lists, most specific first. */
 export function skuCandidates(item: ItemPassport): string[] {
   if (item.defindex == null || item.qualityId == null) return [];
+  const unusual = item.quality === 'Unusual' || item.qualityId === 5;
+  if (unusual && item.effect?.id == null) return [];
 
-  const effect = item.effect?.id != null ? `;u${item.effect.id}` : '';
+  const effect = unusual && item.effect?.id != null ? `;u${item.effect.id}` : '';
   const au = item.australium ? ';australium' : '';
   const uc = item.craftable ? '' : ';uncraftable';
   const festive = item.festivized ? ';festive' : '';
@@ -46,10 +52,14 @@ export function skuCandidates(item: ItemPassport): string[] {
   ].filter((sku): sku is string => Boolean(sku));
 
   const unique = [...new Set(out)];
-  if (!recipe) return unique;
+  const withEffect =
+    unusual && item.effect?.id != null
+      ? unique.filter((sku) => skuHasPart(sku, `u${item.effect!.id}`))
+      : unique;
+  if (!recipe) return withEffect;
 
   const required = recipe.split(';').filter(Boolean);
-  return unique.filter((sku) => {
+  return withEffect.filter((sku) => {
     const parts = sku.split(';');
     return required.every((part) => parts.includes(part));
   });

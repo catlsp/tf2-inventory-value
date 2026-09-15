@@ -1,12 +1,13 @@
 import { storage } from 'wxt/utils/storage';
 import type { SkuPrice } from './prices/parse-pricedb';
 
-export const PRICE_CACHE_VERSION = 6;
+export const PRICE_CACHE_VERSION = 9;
 const CACHE_KEY = 'tf2iv.priceCache';
 
 export type PriceCache = {
   version: number;
   fetchedAt: number;
+  fullListAt?: number;
   keyRef: number;
   index: Record<string, SkuPrice>;
 };

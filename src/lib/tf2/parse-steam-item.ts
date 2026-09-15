@@ -1,4 +1,4 @@
-import { effectIdFromName } from './effects';
+import { effectIdFromName, effectIdFromParticle, effectNameFromId } from './effects';
 import { paintDefindexFromName } from './paints';
 import { qualityFromId, qualityFromTag, qualityIdFromName } from './quality';
 import { spellIdFromName } from './spells';
@@ -13,7 +13,7 @@ import type {
   StrangePart,
 } from './types';
 
-const EFFECT_RE = /^(?:★\s*)?Unusual Effect:\s*(.+)$/i;
+const EFFECT_RE = /unusual effect:\s*(.+)$/i;
 const PAINT_RE = /^Paint(?:ed)? Color:\s*(.+)$/i;
 const SPELL_RE = /^Halloween(?: Spell)?:\s*(.+)$/i;
 const PART_RE = /^Strange Part:\s*(.+?)(?::\s*(\d+))?$/i;
@@ -33,10 +33,59 @@ const KILLSTREAK_KIT_DEFINDEX = 6527;
 const SPECIALIZED_KILLSTREAK_KIT_DEFINDEX = 6523;
 const PROFESSIONAL_KILLSTREAK_KIT_DEFINDEX = 6526;
 
+function cleanDescriptionLine(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function linesOf(item: SteamItemDescription): string[] {
   return [...(item.descriptions ?? []), ...(item.owner_descriptions ?? [])]
-    .map((line) => line.value?.replace(/\u00a0/g, ' ').trim() ?? '')
+    .map((line) => cleanDescriptionLine(line.value ?? ''))
     .filter((value) => value.length > 0);
+}
+
+function effectFromTags(item: SteamItemDescription): { id: number | null; name: string } | null {
+  const tag = item.tags?.find((entry) => (
+    /particle|unusual.?effect/i.test(entry.category)
+    || /particle|unusual.?effect/i.test(entry.internal_name)
+  ));
+  if (!tag) return null;
+  const name = (tag.localized_tag_name ?? '').trim();
+  const fromInternal = effectIdFromParticle(tag.internal_name);
+  const fromName = name ? effectIdFromName(name) : null;
+  const id = fromInternal ?? fromName;
+  if (!name && id == null) return null;
+  return { id, name: name || effectNameFromId(id ?? 0) || tag.internal_name };
+}
+
+function effectFromAppData(item: SteamItemDescription): number | null {
+  const data = item.app_data;
+  if (!data) return null;
+  for (const [key, raw] of Object.entries(data)) {
+    if (key === 'def_index' || key === 'defindex' || key === 'quality') continue;
+    if (!/particle|effect/i.test(key) || raw == null) continue;
+    const id = effectIdFromParticle(raw);
+    if (id != null) return id;
+  }
+  return null;
+}
+
+function resolveUnusualEffect(
+  item: SteamItemDescription,
+  effectName: string | null,
+): { id: number | null; name: string } | null {
+  const fromTags = effectFromTags(item);
+  const particleId = effectFromAppData(item) ?? fromTags?.id ?? null;
+  const name = effectName || fromTags?.name || (particleId != null ? effectNameFromId(particleId) : null);
+  if (!name && particleId == null) return null;
+  const id = particleId ?? (name ? effectIdFromName(name) : null);
+  return {
+    id,
+    name: name || effectNameFromId(id ?? 0) || `Particle ${id}`,
+  };
 }
 
 function parseDefindex(item: SteamItemDescription): number | null {
@@ -285,6 +334,8 @@ export function parseSteamDescription(
     else if (sheen && killstreak < 2) killstreak = 2;
   }
 
+  const effect = resolveUnusualEffect(item, effectName);
+
   const targetName = recipe.targetName;
   const targetDefindex = targetName ? stockWeaponDefindexFromName(targetName) : null;
   const { outputDefindex, outputQuality } = outputForFabricator(
@@ -307,7 +358,7 @@ export function parseSteamDescription(
   const slot = parseSlot(item);
   const crateSeries = parseCrateSeries(item, lines, slot, name, marketHashName);
   const flags: string[] = [];
-  if (effectName) flags.push('unusual');
+  if (effect || quality === 'Unusual') flags.push('unusual');
   if (paintName) flags.push('paint');
   if (spellNames.length > 0) flags.push('spelled');
   if (parseParts(lines).length > 0) flags.push('parts');
@@ -331,9 +382,7 @@ export function parseSteamDescription(
     craftable,
     australium,
     festivized,
-    effect: effectName
-      ? { id: effectIdFromName(effectName), name: effectName }
-      : null,
+    effect,
     paint: paintName
       ? { defindex: paintDefindexFromName(paintName), name: paintName }
       : null,
