@@ -13,28 +13,6 @@ Not affiliated with Valve, Steam, or backpack.tf. No Steam password. No API key.
 
 Prices come from the public [pricedb.io](https://pricedb.io) TF2 market list.
 
-## Chrome Web Store
-
-Listing copy, privacy answers, and image sizes: [store/CHROME_WEB_STORE.md](./store/CHROME_WEB_STORE.md).
-
-```bash
-npm install
-npm run zip
-```
-
-Upload `.output/tf2-inventory-value-*-chrome.zip`. Dashboard: [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole). One-time US$5 developer fee.
-
-## Firefox Add-ons (AMO)
-
-Listing copy and submit steps: [store/FIREFOX_AMO.md](./store/FIREFOX_AMO.md). No registration fee. Firefox 128+.
-
-```bash
-npm install
-npm run zip:firefox
-```
-
-Upload `.output/tf2-inventory-value-*-firefox.zip` at [addons.mozilla.org/developers](https://addons.mozilla.org/developers/). Gecko id: `tf2-inventory-value@catlsp` — do not change it after the first AMO version.
-
 Privacy policy:
 
 `https://github.com/catlsp/tf2-inventory-value/blob/main/PRIVACY.md`
