@@ -17,14 +17,6 @@ Privacy policy:
 
 `https://github.com/catlsp/tf2-inventory-value/blob/main/PRIVACY.md`
 
-## Load unpacked (development)
-
-1. Install [Node.js](https://nodejs.org/) 22+.
-2. In this folder: `npm install` then `npm run build` (Chrome) or `npm run build:firefox`.
-3. Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → `.output/chrome-mv3`.
-4. Firefox → `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick `.output/firefox-mv3/manifest.json`.
-5. Open a TF2 inventory on steamcommunity.com.
-
 ## Privacy
 
 [PRIVACY.md](./PRIVACY.md). Inventory stays in the browser; the pricelist is downloaded from pricedb.io.
